@@ -9,7 +9,6 @@ import {
   useLocalParticipant,
   useIsSpeaking,
   useChat,
-  useParticipantAttributes,
 } from "@livekit/components-react";
 import type { Participant } from "livekit-client";
 import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio, Play } from "lucide-react";
@@ -206,14 +205,6 @@ function TopControls({ onLeave }: { onLeave: () => void }) {
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-function extractYoutubeId(url: string) {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
-}
-
 // ── Stage ─────────────────────────────────────────────────────
 function VoiceStage({
   focusedIdentity,
@@ -222,34 +213,6 @@ function VoiceStage({
   focusedIdentity: string | null;
   setFocusedIdentity: (id: string | null) => void;
 }) {
-  const participants = useParticipants();
-  const focusedParticipant = participants.find(p => p.identity === focusedIdentity);
-  const { attributes } = useParticipantAttributes({ participant: focusedParticipant });
-  
-  const youtubeUrl = attributes?.youtubeUrl;
-  const videoId = extractYoutubeId(youtubeUrl || "");
-
-  if (focusedParticipant && videoId) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-6 w-full h-full max-h-[70vh]">
-        <div className="w-full h-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-border/50 relative">
-          <iframe
-            className="absolute top-0 left-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-            title="YouTube video player"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          ></iframe>
-        </div>
-        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-          Watching {focusedParticipant.name ?? focusedParticipant.identity}&apos;s screen
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 pointer-events-none opacity-30 select-none">
       <div className="flex h-24 w-24 items-center justify-center rounded-full border border-foreground/10" style={{ background: "radial-gradient(circle, oklch(0.2 0 0) 0%, transparent 100%)" }}>
@@ -305,8 +268,6 @@ function ParticipantTile({
 }) {
   const isSpeaking = useIsSpeaking(participant);
   const isMuted = !participant.isMicrophoneEnabled;
-  const { attributes } = useParticipantAttributes({ participant });
-  const isSharingVideo = !!attributes?.youtubeUrl;
 
   const avatarUrl = `https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(participant.identity)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
@@ -320,13 +281,6 @@ function ParticipantTile({
       >
         <img src={avatarUrl} alt={participant.name ?? participant.identity} className="h-full w-full object-cover rounded-2xl" />
         
-        {/* Watch Party Indicator */}
-        {isSharingVideo && (
-          <div className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 border border-border shadow-sm z-10 animate-pulse" style={{ animationDuration: '2s' }}>
-            <Play className="h-2.5 w-2.5 text-white fill-white ml-0.5" />
-          </div>
-        )}
-
         {/* Status Badge (Mic) */}
         <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-card border border-border shadow-sm overflow-hidden z-10">
           {isMuted ? (
