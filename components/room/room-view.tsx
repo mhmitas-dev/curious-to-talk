@@ -11,8 +11,10 @@ import {
   useChat,
 } from "@livekit/components-react";
 import type { Participant } from "livekit-client";
-import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio, Play } from "lucide-react";
+import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio } from "lucide-react";
 import { ChatTab } from "./chat-tab";
+import { AppsTab } from "./apps-tab";
+import { WatchPartyStage } from "./watch-party-stage";
 
 interface Room {
   id: string;
@@ -26,12 +28,13 @@ interface Props {
   livekitUrl: string;
   userId: string;
   displayName: string;
+  isAdmin: boolean;
 }
 
 type SidebarTab = "chat" | "apps" | "settings";
 
 // ── Root component ────────────────────────────────────────────
-export function RoomView({ room, token, livekitUrl, userId, displayName }: Props) {
+export function RoomView({ room, token, livekitUrl, userId, displayName, isAdmin }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chat");
   const [focusedIdentity, setFocusedIdentity] = useState<string | null>(null);
@@ -98,10 +101,11 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
             </div>
           </div>
 
-          {/* ── Stage (spotlight) ──────────────────────────── */}
-          <VoiceStage
+          {/* ── Stage (spotlight) ────────────────────────────── */}
+          <CenterStage
             focusedIdentity={focusedIdentity}
             setFocusedIdentity={setFocusedIdentity}
+            isAdmin={isAdmin}
           />
 
           {/* ── Participant strip ─────────────────────────── */}
@@ -158,7 +162,9 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
           {/* Sidebar Content */}
           <div className="flex-1 overflow-y-auto">
             {sidebarTab === "chat" && <ChatTab localIdentity={userId} />}
-            {sidebarTab === "apps" && <AppsTab />}
+            {sidebarTab === "apps" && (
+              <AppsTabWrapper isAdmin={isAdmin} />
+            )}
             {sidebarTab === "settings" && <SettingsTab />}
           </div>
         </aside>
@@ -206,13 +212,35 @@ function TopControls({ onLeave }: { onLeave: () => void }) {
 }
 
 // ── Stage ─────────────────────────────────────────────────────
-function VoiceStage({
+// This component is inside <LiveKitRoom> so it can call LiveKit hooks.
+function CenterStage({
   focusedIdentity,
   setFocusedIdentity,
+  isAdmin,
 }: {
   focusedIdentity: string | null;
   setFocusedIdentity: (id: string | null) => void;
+  isAdmin: boolean;
 }) {
+  const participants = useParticipants();
+  // Scan all participants for whoever has set a youtubeUrl attribute.
+  // Only the admin has canUpdateOwnMetadata permission so only they can set it.
+  const adminWithVideo = participants.find(
+    (p) => p.attributes?.youtubeUrl && p.attributes.youtubeUrl.length > 0
+  );
+  const youtubeUrl = adminWithVideo?.attributes?.youtubeUrl ?? "";
+  const isWatchPartyActive = youtubeUrl.length > 0;
+
+  if (isWatchPartyActive && adminWithVideo) {
+    return (
+      <WatchPartyStage
+        adminParticipant={adminWithVideo}
+        youtubeUrl={youtubeUrl}
+        isAdmin={isAdmin}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 pointer-events-none opacity-30 select-none">
       <div className="flex h-24 w-24 items-center justify-center rounded-full border border-foreground/10" style={{ background: "radial-gradient(circle, oklch(0.2 0 0) 0%, transparent 100%)" }}>
@@ -223,6 +251,16 @@ function VoiceStage({
       </p>
     </div>
   );
+}
+
+// Wrapper so AppsTab can access LiveKit context for watch party status
+function AppsTabWrapper({ isAdmin }: { isAdmin: boolean }) {
+  const participants = useParticipants();
+  const adminWithVideo = participants.find(
+    (p) => p.attributes?.youtubeUrl && p.attributes.youtubeUrl.length > 0
+  );
+  const isWatchPartyActive = !!(adminWithVideo?.attributes?.youtubeUrl);
+  return <AppsTab isAdmin={isAdmin} isWatchPartyActive={isWatchPartyActive} />;
 }
 
 // ── Participant Strip Container ───────────────────────────────
@@ -333,17 +371,6 @@ function ChatButton({ onClick, isActive }: { onClick: () => void; isActive: bool
   );
 }
 
-// ── Sidebar placeholder tabs ──────────────────────────────────
-
-function AppsTab() {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl">🚀</div>
-      <p className="text-sm font-medium">Apps coming soon</p>
-      <p className="text-xs text-muted-foreground">YouTube, Screen Share, etc.</p>
-    </div>
-  );
-}
 
 function SettingsTab() {
   return (
