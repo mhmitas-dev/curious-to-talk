@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Curious to Talk",
-  description: "A private voice room app for close friends.",
+  description: "Voice room app for hanging out with friends.",
   applicationName: "Curious to Talk",
 };
 
