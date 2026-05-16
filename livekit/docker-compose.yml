@@ -1,0 +1,8 @@
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit/livekit.yaml
+    restart: unless-stopped
+    network_mode: host          # Use host networking for WebRTC UDP to work properly
+    volumes:
+      - ./livekit.yaml:/etc/livekit/livekit.yaml:ro

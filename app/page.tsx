@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CreateRoomForm } from "@/components/create-room-form";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -94,8 +95,10 @@ export default async function HomePage() {
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
             Rooms
           </h2>
-          {/* Room creation will be added in Phase 2 */}
         </div>
+
+        {/* Admin room creation form */}
+        {profile.is_admin && <CreateRoomForm />}
 
         {rooms && rooms.length > 0 ? (
           <ul className="flex flex-col gap-3">

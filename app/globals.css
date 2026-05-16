@@ -50,13 +50,13 @@
 
 /* ── App is always dark — violet/purple accent ──────────────── */
 :root {
-  --background:           oklch(0.09 0.015 265);
+  --background:           oklch(0.15 0.02 265);
   --foreground:           oklch(0.97 0.005 265);
 
-  --card:                 oklch(0.13 0.015 265);
+  --card:                 oklch(0.18 0.02 265);
   --card-foreground:      oklch(0.97 0.005 265);
 
-  --popover:              oklch(0.13 0.015 265);
+  --popover:              oklch(0.18 0.02 265);
   --popover-foreground:   oklch(0.97 0.005 265);
 
   --primary:              oklch(0.60 0.22 285);   /* violet */
@@ -97,11 +97,13 @@
 
 /* .dark mirrors :root so shadcn components pick up correct tokens */
 .dark {
-  --background:           oklch(0.09 0.015 265);
+  --background:           oklch(0.15 0.02 265);
   --foreground:           oklch(0.97 0.005 265);
-  --card:                 oklch(0.13 0.015 265);
+
+  --card:                 oklch(0.18 0.02 265);
   --card-foreground:      oklch(0.97 0.005 265);
-  --popover:              oklch(0.13 0.015 265);
+
+  --popover:              oklch(0.18 0.02 265);
   --popover-foreground:   oklch(0.97 0.005 265);
   --primary:              oklch(0.60 0.22 285);
   --primary-foreground:   oklch(0.99 0 0);

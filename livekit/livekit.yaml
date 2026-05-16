@@ -1,0 +1,22 @@
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+  # Tell LiveKit its public address for WebRTC ICE candidates
+  use_external_ip: true
+
+keys:
+  # API key : API secret
+  # key = 2a87527e2b34b2f53a178b6cf431abb4
+  # secret = 507cf86c101abd0847d681d12b7eaa7f912cbb75cf0989b1f9174834083e688b
+  2a87527e2b34b2f53a178b6cf431abb4: 507cf86c101abd0847d681d12b7eaa7f912cbb75cf0989b1f9174834083e688b
+
+logging:
+  level: info
+
+room:
+  # Auto-create rooms when a participant joins (no pre-creation needed on server)
+  auto_create: true
+  # Empty rooms are closed after 5 minutes of inactivity
+  empty_timeout: 300
