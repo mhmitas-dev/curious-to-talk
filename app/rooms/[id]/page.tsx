@@ -19,7 +19,7 @@ export default async function RoomPage({ params }: Props) {
   // Check user is approved
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, is_admin, status")
+    .select("display_name, status")
     .eq("id", userId)
     .single();
 
@@ -49,7 +49,6 @@ export default async function RoomPage({ params }: Props) {
     room: room.id,
     canPublish: true,
     canSubscribe: true,
-    canUpdateOwnMetadata: true,
   });
   const jwt = await token.toJwt();
 
@@ -60,7 +59,6 @@ export default async function RoomPage({ params }: Props) {
       livekitUrl={livekitUrl}
       userId={userId}
       displayName={profile.display_name}
-      isAdmin={profile.is_admin ?? false}
     />
   );
 }
