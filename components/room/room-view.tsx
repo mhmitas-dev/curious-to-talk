@@ -12,7 +12,7 @@ import {
   useTracks,
   VideoTrack,
 } from "@livekit/components-react";
-import { Track, type Participant } from "livekit-client";
+import { Track, ScreenSharePresets, RemoteTrack, type Participant } from "livekit-client";
 import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio, MonitorUp, MonitorOff, Monitor, Maximize, Minimize } from "lucide-react";
 import { ChatTab } from "./chat-tab";
 
@@ -32,10 +32,47 @@ interface Props {
 
 type SidebarTab = "apps" | "chat" | "settings";
 
+type ScreenQuality = "720p" | "1080p";
+type ScreenFPS = 15 | 30;
+type BufferTime = 0 | 1 | 3 | 5;
+
+// ── Custom Hook: useLocalStorage ──────────────────────────────
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === "undefined") {
+      return initialValue;
+    }
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue] as const;
+}
+
 // ── Root component ────────────────────────────────────────────
 export function RoomView({ room, token, livekitUrl, userId, displayName }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chat");
+  const [screenQuality, setScreenQuality] = useLocalStorage<ScreenQuality>("ctt_screenQuality", "720p");
+  const [screenFps, setScreenFps] = useLocalStorage<ScreenFPS>("ctt_screenFps", 30);
+  const [bufferTime, setBufferTime] = useLocalStorage<BufferTime>("ctt_bufferTime", 0);
   const router = useRouter();
 
   const handleLeave = () => {
@@ -101,7 +138,7 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
           </div>
 
           {/* ── Stage (spotlight) ──────────────────────────── */}
-          <VoiceStage />
+          <VoiceStage bufferTime={bufferTime} />
 
           {/* ── Participant strip ─────────────────────────── */}
           <ParticipantStripContainer />
@@ -153,9 +190,18 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
 
           {/* Sidebar Content */}
           <div className="flex-1 overflow-y-auto">
-            {sidebarTab === "apps" && <AppsTab />}
+            {sidebarTab === "apps" && <AppsTab screenQuality={screenQuality} screenFps={screenFps} />}
             {sidebarTab === "chat" && <ChatTab localIdentity={userId} />}
-            {sidebarTab === "settings" && <SettingsTab />}
+            {sidebarTab === "settings" && (
+              <SettingsTab
+                screenQuality={screenQuality}
+                setScreenQuality={setScreenQuality}
+                screenFps={screenFps}
+                setScreenFps={setScreenFps}
+                bufferTime={bufferTime}
+                setBufferTime={setBufferTime}
+              />
+            )}
           </div>
         </aside>
       </LiveKitRoom>
@@ -199,7 +245,7 @@ function TopControls({ onLeave }: { onLeave: () => void }) {
 }
 
 // ── Stage ─────────────────────────────────────────────────────
-function VoiceStage() {
+function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
   const screenShareTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }]);
   const activeShare = screenShareTracks[0];
   const containerRef = useRef<HTMLDivElement>(null);
@@ -212,6 +258,13 @@ function VoiceStage() {
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const track = activeShare?.publication?.track;
+    if (track instanceof RemoteTrack && typeof track.setPlayoutDelay === 'function') {
+      track.setPlayoutDelay(bufferTime);
+    }
+  }, [activeShare?.publication?.track, bufferTime]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -365,7 +418,7 @@ function ChatButton({ onClick, isActive }: { onClick: () => void; isActive: bool
 }
 
 // ── Apps Tab ──────────────────────────────────────────────────
-function AppsTab() {
+function AppsTab({ screenQuality, screenFps }: { screenQuality: ScreenQuality; screenFps: ScreenFPS }) {
   const { localParticipant } = useLocalParticipant();
   const screenShareTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }]);
 
@@ -377,7 +430,14 @@ function AppsTab() {
   const toggleScreenShare = async () => {
     if (someoneElseIsSharing) return;
     try {
-      await localParticipant.setScreenShareEnabled(!iAmSharing, { audio: true });
+      const preset = screenQuality === "1080p" 
+        ? (screenFps === 30 ? ScreenSharePresets.h1080fps30 : ScreenSharePresets.h1080fps15)
+        : (screenFps === 30 ? ScreenSharePresets.h720fps30 : ScreenSharePresets.h720fps15);
+        
+      await localParticipant.setScreenShareEnabled(!iAmSharing, { 
+        audio: true,
+        resolution: preset,
+      });
     } catch (e) {
       console.error("Failed to toggle screen share", e);
     }
@@ -431,11 +491,102 @@ function AppsTab() {
   );
 }
 
-function SettingsTab() {
+function SettingsTab({
+  screenQuality,
+  setScreenQuality,
+  screenFps,
+  setScreenFps,
+  bufferTime,
+  setBufferTime,
+}: {
+  screenQuality: ScreenQuality;
+  setScreenQuality: (q: ScreenQuality) => void;
+  screenFps: ScreenFPS;
+  setScreenFps: (fps: ScreenFPS) => void;
+  bufferTime: BufferTime;
+  setBufferTime: (b: BufferTime) => void;
+}) {
+  const [view, setView] = useState<"main" | "screenShare">("main");
+
+  if (view === "main") {
+    return (
+      <div className="flex h-full flex-col p-4 gap-6">
+        <h3 className="text-sm font-semibold text-muted-foreground px-2 uppercase tracking-wider">Settings</h3>
+        
+        <div className="flex flex-col gap-2 px-2">
+          <button
+            onClick={() => setView("screenShare")}
+            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                <Monitor className="h-5 w-5" />
+              </div>
+              <span className="font-medium text-foreground">Screen Share</span>
+            </div>
+            <span className="text-muted-foreground group-hover:translate-x-1 transition-transform">→</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl">⚙️</div>
-      <p className="text-sm font-medium">Settings coming soon</p>
+    <div className="flex h-full flex-col p-4 gap-6 animate-in slide-in-from-right-4 duration-200">
+      <div className="flex items-center gap-2 px-2">
+        <button
+          onClick={() => setView("main")}
+          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-accent text-muted-foreground transition-colors -ml-2"
+          aria-label="Back to settings menu"
+        >
+          <span className="text-xl leading-none mb-1">←</span>
+        </button>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Screen Share</h3>
+      </div>
+
+      <div className="flex flex-col gap-5 px-2">
+        <div className="flex gap-4">
+          <div className="flex-1 flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-orange-400 text-center">Quality</label>
+            <select
+              value={screenQuality}
+              onChange={(e) => setScreenQuality(e.target.value as ScreenQuality)}
+              className="bg-card text-sm border border-border rounded-lg px-3 py-2.5 text-foreground outline-none focus:border-orange-400/50 appearance-none cursor-pointer"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center" }}
+            >
+              <option value="720p">720p (HD)</option>
+              <option value="1080p">1080p (FHD)</option>
+            </select>
+          </div>
+          <div className="flex-1 flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-orange-400 text-center">Frame Rate</label>
+            <select
+              value={screenFps}
+              onChange={(e) => setScreenFps(Number(e.target.value) as ScreenFPS)}
+              className="bg-card text-sm border border-border rounded-lg px-3 py-2.5 text-foreground outline-none focus:border-orange-400/50 appearance-none cursor-pointer"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center" }}
+            >
+              <option value={15}>15 fps</option>
+              <option value={30}>30 fps</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-orange-400 text-center">Buffer Time</label>
+          <select
+            value={bufferTime}
+            onChange={(e) => setBufferTime(Number(e.target.value) as BufferTime)}
+            className="bg-card text-sm border border-border rounded-lg px-3 py-2.5 text-foreground outline-none focus:border-orange-400/50 appearance-none cursor-pointer"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center" }}
+          >
+            <option value={0}>No buffer - Better for Realtime</option>
+            <option value={1}>1 second - Better for Quality</option>
+            <option value={3}>3 seconds - Better for Quality</option>
+            <option value={5}>5 seconds - Better for Quality</option>
+          </select>
+        </div>
+      </div>
     </div>
   );
 }
