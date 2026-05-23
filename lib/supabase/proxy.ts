@@ -1,11 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Called by proxy.ts on every request.
-// Refreshes the Supabase Auth session cookie so Server Components
-// always have a valid token, and redirects unauthenticated users to /login.
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +18,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request,
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -31,24 +32,37 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Do not add code between createServerClient and getClaims().
-  // getClaims() validates the JWT signature — it is safe to trust server-side.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with cross-browser cookies, so just do it exactly this way.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
-  // Public paths that don't require authentication
   const isPublicPath =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register");
+    pathname.startsWith("/login") || pathname.startsWith("/api/auth/callback");
 
   if (!user && !isPublicPath) {
+    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // IMPORTANT: return supabaseResponse as-is to keep session cookies in sync.
+  // IMPORTANT: You *must* return the supabaseResponse object as it is.
+  // If you're creating a new response object with NextResponse.next() make sure to:
+  // 1. Pass the request in it, like so:
+  //    const myNewResponse = NextResponse.next({ request })
+  // 2. Copy over the cookies, like so:
+  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
+  // 3. Change the myNewResponse object to fit your needs, but avoid changing
+  //    the cookies!
+  // 4. Finally:
+  //    return myNewResponse
+  // If this is not done, you may be causing the browser and server to go out
+  // of sync and terminate the user's session prematurely!
+
   return supabaseResponse;
 }

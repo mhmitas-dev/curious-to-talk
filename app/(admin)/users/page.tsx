@@ -70,6 +70,24 @@ export default async function AdminUsersPage() {
         </div>
       </header>
 
+      {/* ── Tabs ──────────────────────────────────────────────── */}
+      <div className="border-b border-border bg-card/25">
+        <div className="mx-auto flex max-w-lg px-4">
+          <Link
+            href="/admin/users"
+            className="flex-1 border-b-2 border-primary py-3 text-center text-xs font-semibold text-foreground transition-colors"
+          >
+            Users
+          </Link>
+          <Link
+            href="/admin/rooms"
+            className="flex-1 border-b-2 border-transparent py-3 text-center text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Rooms
+          </Link>
+        </div>
+      </div>
+
       {/* ── Main ─────────────────────────────────────────────── */}
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6 space-y-8">
 
