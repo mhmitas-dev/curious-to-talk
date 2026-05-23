@@ -12,11 +12,11 @@ import {
   useTracks,
   VideoTrack,
 } from "@livekit/components-react";
-import { Track, ScreenSharePresets, RemoteTrack, type Participant } from "livekit-client";
+import { Track, ScreenSharePresets, RemoteTrack, RemoteAudioTrack, type Participant } from "livekit-client";
 import {
   Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio,
   MonitorUp, MonitorOff, Monitor, Maximize, Minimize,
-  Settings, LayoutGrid, ChevronUp, ChevronDown,
+  Settings, LayoutGrid, ChevronUp, ChevronDown, Volume2, VolumeX,
 } from "lucide-react";
 import { ChatTab } from "./chat-tab";
 
@@ -320,9 +320,15 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
   const screenShareTracks = useTracks([
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
+  const screenAudioTracks = useTracks([
+    { source: Track.Source.ScreenShareAudio, withPlaceholder: false },
+  ]);
   const activeShare = screenShareTracks[0];
+  const activeAudio = screenAudioTracks[0];
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -338,6 +344,13 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
       track.setPlayoutDelay(bufferTime);
     }
   }, [activeShare?.publication?.track, bufferTime]);
+
+  useEffect(() => {
+    const track = activeAudio?.publication?.track;
+    if (track instanceof RemoteAudioTrack) {
+      track.setVolume(isAudioMuted ? 0 : 1);
+    }
+  }, [activeAudio?.publication?.track, isAudioMuted]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -357,13 +370,24 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
           className="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden shadow-2xl bg-black"
         >
           <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
-          <button
-            onClick={toggleFullscreen}
-            className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors z-10 shadow-lg border border-white/10"
-            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          >
-            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-          </button>
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+            {activeAudio && (
+              <button
+                onClick={() => setIsAudioMuted(!isAudioMuted)}
+                className="p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors shadow-lg border border-white/10"
+                aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
+              >
+                {isAudioMuted ? <VolumeX className="h-5 w-5 text-red-400" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+            )}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors shadow-lg border border-white/10"
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
       </div>
     );
