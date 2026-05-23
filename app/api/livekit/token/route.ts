@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     // Verify the user is approved (not just logged in)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, status")
+      .select("display_name, status, avatar_url")
       .eq("id", userId)
       .single();
 
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
     const token = new AccessToken(apiKey, apiSecret, {
       identity: userId,          // unique participant ID (Supabase user ID)
       name: profile.display_name, // display name shown to other participants
+      metadata: JSON.stringify({ avatar_url: profile.avatar_url }),
       ttl: "4h",                  // token expires after 4 hours
     });
 

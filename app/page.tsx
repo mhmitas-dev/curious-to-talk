@@ -4,6 +4,14 @@ import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
+import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -17,7 +25,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, is_admin, status")
+    .select("display_name, is_admin, status, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -63,28 +71,44 @@ export default async function HomePage() {
               </a>
             )}
 
-            {/* Avatar */}
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-              }}
-              title={profile.display_name}
-            >
-              {initials}
-            </div>
-
-            <form action={logout}>
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
-              >
-                Sign out
-              </Button>
-            </form>
+            {/* Avatar Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="outline-none">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.display_name}
+                    className="flex h-8 w-8 items-center justify-center rounded-full shadow-sm object-cover transition-transform hover:scale-105 active:scale-95"
+                  />
+                ) : (
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none transition-transform hover:scale-105 active:scale-95"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                    }}
+                    title={profile.display_name}
+                  >
+                    {initials}
+                  </div>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5 text-sm font-medium">
+                  {profile.display_name}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem render={<Link href="/profile" />} className="cursor-pointer">
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <form action={logout}>
+                  <DropdownMenuItem render={<button type="submit" />} className="w-full text-left cursor-pointer text-destructive focus:text-destructive">
+                    Sign out
+                  </DropdownMenuItem>
+                </form>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

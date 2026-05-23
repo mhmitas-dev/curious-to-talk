@@ -40,7 +40,7 @@ export default async function AdminUsersPage() {
   // Fetch all profiles — admin RLS policy allows this
   const { data: users } = await supabase
     .from("profiles")
-    .select("id, display_name, is_admin, status, created_at")
+    .select("id, display_name, is_admin, status, created_at, avatar_url")
     .order("created_at", { ascending: true });
 
   const pending = users?.filter((u) => u.status === "pending") ?? [];
@@ -70,6 +70,24 @@ export default async function AdminUsersPage() {
         </div>
       </header>
 
+      {/* ── Tabs ──────────────────────────────────────────────── */}
+      <div className="border-b border-border bg-card/25">
+        <div className="mx-auto flex max-w-lg px-4">
+          <Link
+            href="/admin/users"
+            className="flex-1 border-b-2 border-primary py-3 text-center text-xs font-semibold text-foreground transition-colors"
+          >
+            Users
+          </Link>
+          <Link
+            href="/admin/rooms"
+            className="flex-1 border-b-2 border-transparent py-3 text-center text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Rooms
+          </Link>
+        </div>
+      </div>
+
       {/* ── Main ─────────────────────────────────────────────── */}
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6 space-y-8">
 
@@ -98,15 +116,23 @@ export default async function AdminUsersPage() {
                   className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
                 >
                   {/* Avatar */}
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.5), oklch(0.45 0.20 300 / 0.5))",
-                    }}
-                  >
-                    {user.display_name.slice(0, 2).toUpperCase()}
-                  </div>
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.display_name}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.5), oklch(0.45 0.20 300 / 0.5))",
+                      }}
+                    >
+                      {user.display_name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
 
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">
@@ -154,15 +180,23 @@ export default async function AdminUsersPage() {
                 key={user.id}
                 className="flex items-center gap-3 rounded-2xl border border-border bg-card/50 p-4"
               >
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-                  }}
-                >
-                  {user.display_name.slice(0, 2).toUpperCase()}
-                </div>
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                    }}
+                  >
+                    {user.display_name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">
                     {user.display_name}

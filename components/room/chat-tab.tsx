@@ -129,19 +129,19 @@ function ChatBubble({
 
       {/* Bubble */}
       <div
-        className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed break-words"
+        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
+          isOwn
+            ? "text-white"
+            : "bg-secondary border border-border text-secondary-foreground"
+        }`}
         style={
           isOwn
             ? {
                 background:
                   "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))",
-                color: "white",
                 borderBottomRightRadius: "4px",
               }
             : {
-                background: "oklch(0.20 0.01 265)",
-                color: "oklch(0.90 0.01 265)",
-                border: "1px solid oklch(0.25 0.01 265)",
                 borderBottomLeftRadius: "4px",
               }
         }
