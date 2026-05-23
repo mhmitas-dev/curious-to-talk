@@ -13,7 +13,7 @@ import {
   VideoTrack,
 } from "@livekit/components-react";
 import { Track, ScreenSharePresets, RemoteTrack, type Participant } from "livekit-client";
-import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio, MonitorUp, MonitorOff, Monitor, Maximize, Minimize } from "lucide-react";
+import { Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio, MonitorUp, MonitorOff, Monitor, Maximize, Minimize, Settings, LayoutGrid } from "lucide-react";
 import { ChatTab } from "./chat-tab";
 
 interface Room {
@@ -155,29 +155,34 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
 
         {/* 3. The Sidebar */}
         <aside
-          className={`fixed right-0 top-0 z-50 flex h-full w-[85vw] max-w-[320px] flex-col border-l border-border bg-card/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ${
+          className={`fixed right-0 top-0 z-50 flex h-full w-[92vw] max-w-[380px] flex-col border-l border-border bg-card/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ${
             sidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
           {/* Sidebar Header / Tabs */}
           <div className="flex items-center justify-between border-b border-border px-2 pt-2 pb-0">
-            <div className="flex flex-1 gap-1">
-              {(["apps", "chat", "settings"] as SidebarTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setSidebarTab(tab)}
-                  className={`relative px-3 py-2.5 text-xs font-semibold capitalize transition-colors ${
-                    sidebarTab === tab
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab}
-                  {sidebarTab === tab && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
-                  )}
-                </button>
-              ))}
+            <div className="flex flex-1 gap-1 justify-around">
+              {(["chat", "apps", "settings"] as SidebarTab[]).map((tab) => {
+                const Icon = tab === "chat" ? MessageSquare : tab === "apps" ? LayoutGrid : Settings;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setSidebarTab(tab)}
+                    className={`relative flex flex-1 items-center justify-center py-3 transition-colors ${
+                      sidebarTab === tab
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title={tab}
+                    aria-label={tab}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {sidebarTab === tab && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -223,19 +228,19 @@ function TopControls({ onLeave }: { onLeave: () => void }) {
     <div className="flex items-center gap-3 pointer-events-auto">
       <button
         onClick={toggleMic}
-        className={`flex h-14 w-14 items-center justify-center rounded-full backdrop-blur-md border transition-all shadow-xl ${
+        className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-md border transition-all shadow-xl ${
           isMuted
             ? "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
-            : "bg-card/80 border-border text-foreground hover:bg-accent"
+            : "bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20"
         }`}
         aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
       >
-        {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+        {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
       </button>
 
       <button
         onClick={onLeave}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/90 backdrop-blur-md border border-red-400/50 text-white hover:bg-red-500 transition-all shadow-xl"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-card/80 backdrop-blur-md border border-border text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl"
         aria-label="Leave room"
       >
         <LogOut className="h-5 w-5" />
