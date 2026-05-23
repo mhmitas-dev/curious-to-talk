@@ -13,7 +13,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, status, is_admin")
+    .select("display_name, status, is_admin, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -49,16 +49,24 @@ export default async function ProfilePage() {
         
         {/* Avatar Section */}
         <div className="flex flex-col items-center gap-4 py-2">
-          <div
-            className="flex h-24 w-24 items-center justify-center rounded-full text-3xl font-bold text-primary-foreground select-none shadow-lg"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-              boxShadow: "0 8px 32px -8px oklch(0.60 0.22 285 / 0.5)",
-            }}
-          >
-            {initials}
-          </div>
+          {profile.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt={profile.display_name} 
+              className="flex h-24 w-24 items-center justify-center rounded-full shadow-lg object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-24 w-24 items-center justify-center rounded-full text-3xl font-bold text-primary-foreground select-none shadow-lg"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                boxShadow: "0 8px 32px -8px oklch(0.60 0.22 285 / 0.5)",
+              }}
+            >
+              {initials}
+            </div>
+          )}
           <div className="text-center">
             <h2 className="text-xl font-semibold text-foreground">{profile.display_name}</h2>
             <p className="text-sm text-muted-foreground">{email}</p>

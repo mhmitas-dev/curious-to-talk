@@ -28,10 +28,18 @@ export async function GET(request: Request) {
           user.user_metadata?.name ||
           user.user_metadata?.display_name;
 
-        if (name) {
+        const avatarUrl =
+          user.user_metadata?.avatar_url ||
+          user.user_metadata?.picture;
+
+        if (name || avatarUrl) {
+          const updatePayload: Record<string, string> = {};
+          if (name) updatePayload.display_name = name;
+          if (avatarUrl) updatePayload.avatar_url = avatarUrl;
+
           await supabase
             .from("profiles")
-            .update({ display_name: name })
+            .update(updatePayload)
             .eq("id", user.id);
         }
       }

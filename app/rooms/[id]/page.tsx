@@ -19,7 +19,7 @@ export default async function RoomPage({ params }: Props) {
   // Check user is approved
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, status")
+    .select("display_name, status, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -42,6 +42,7 @@ export default async function RoomPage({ params }: Props) {
   const token = new AccessToken(apiKey, apiSecret, {
     identity: userId,
     name: profile.display_name,
+    metadata: JSON.stringify({ avatar_url: profile.avatar_url }),
     ttl: "4h",
   });
   token.addGrant({

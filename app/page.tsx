@@ -25,7 +25,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, is_admin, status")
+    .select("display_name, is_admin, status, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -74,16 +74,24 @@ export default async function HomePage() {
             {/* Avatar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none transition-transform hover:scale-105 active:scale-95"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-                  }}
-                  title={profile.display_name}
-                >
-                  {initials}
-                </div>
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.display_name}
+                    className="flex h-8 w-8 items-center justify-center rounded-full shadow-sm object-cover transition-transform hover:scale-105 active:scale-95"
+                  />
+                ) : (
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none transition-transform hover:scale-105 active:scale-95"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                    }}
+                    title={profile.display_name}
+                  >
+                    {initials}
+                  </div>
+                )}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <div className="px-2 py-1.5 text-sm font-medium">

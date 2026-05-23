@@ -344,7 +344,18 @@ function ParticipantTile({
   const isMuted = !participant.isMicrophoneEnabled;
   const isScreenShareEnabled = participant.isScreenShareEnabled;
 
-  const avatarUrl = `https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(participant.identity)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  let avatarUrl = `https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(participant.identity)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  
+  if (participant.metadata) {
+    try {
+      const meta = JSON.parse(participant.metadata);
+      if (meta.avatar_url) {
+        avatarUrl = meta.avatar_url;
+      }
+    } catch (e) {
+      console.error("Failed to parse participant metadata", e);
+    }
+  }
 
   return (
     <div className="flex shrink-0 flex-col items-center gap-1.5 group relative">
