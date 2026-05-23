@@ -89,7 +89,20 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
         connect={true}
         audio={false}
         video={false}
-        options={{ adaptiveStream: true }}
+        options={{
+          adaptiveStream: true,
+          publishDefaults: {
+            audioPreset: {
+              maxBitrate: 96000,
+            },
+            screenShareEncoding: { maxBitrate: 1500000 },
+          },
+          audioCaptureDefaults: {
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        }}
         onDisconnected={() => router.push("/")}
         style={{ display: "contents" }}
       >
@@ -533,7 +546,13 @@ function AppsTab({
           ? ScreenSharePresets.h720fps30
           : ScreenSharePresets.h720fps15;
       await localParticipant.setScreenShareEnabled(!iAmSharing, {
-        audio: true,
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 2, // Force stereo for high quality
+          sampleRate: 48000, // Studio quality sample rate
+        },
         resolution: preset,
       });
     } catch (e) {
