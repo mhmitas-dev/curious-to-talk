@@ -12,7 +12,7 @@ import {
   useTracks,
   VideoTrack,
 } from "@livekit/components-react";
-import { Track, ScreenSharePresets, RemoteTrack, RemoteAudioTrack, type Participant } from "livekit-client";
+import { Track, ScreenSharePresets, RemoteTrack, RemoteAudioTrack, AudioPresets, type Participant } from "livekit-client";
 import {
   Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio,
   MonitorUp, MonitorOff, Monitor, Maximize, Minimize,
@@ -558,6 +558,22 @@ function AppsTab({
   const sharerName =
     activeSharingParticipant?.name ?? activeSharingParticipant?.identity ?? "Someone";
 
+  // Fix: set contentHint='music' on the screen share audio track so the browser
+  // uses music-quality Opus encoding instead of speech mode, which causes the
+  // hollow/muffled sound heard when system audio is captured.
+  useEffect(() => {
+    if (!iAmSharing) return;
+    const timer = setTimeout(() => {
+      const pub = localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
+      const mst = (pub?.track as { mediaStreamTrack?: MediaStreamTrack } | undefined)
+        ?.mediaStreamTrack;
+      if (mst && "contentHint" in mst) {
+        mst.contentHint = "music";
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [iAmSharing, localParticipant]);
+
   const toggleScreenShare = async () => {
     if (someoneElseIsSharing) return;
     try {
@@ -578,7 +594,9 @@ function AppsTab({
           sampleRate: 48000, // Studio quality sample rate
         },
         resolution: preset,
-      });
+      // Pass publish options: use the highest-quality stereo audio preset for
+      // screen share audio so it's encoded as music, not speech (256kbps stereo).
+      }, { audioPreset: AudioPresets.musicHighQualityStereo, forceStereo: true });
     } catch (e) {
       console.error("Failed to toggle screen share", e);
     }
