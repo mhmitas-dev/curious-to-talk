@@ -12,11 +12,11 @@ import {
   useTracks,
   VideoTrack,
 } from "@livekit/components-react";
-import { Track, ScreenSharePresets, RemoteTrack, type Participant } from "livekit-client";
+import { Track, ScreenSharePresets, RemoteTrack, RemoteAudioTrack, AudioPresets, type Participant } from "livekit-client";
 import {
   Mic, MicOff, LogOut, MessageSquare, Menu, X, Radio,
   MonitorUp, MonitorOff, Monitor, Maximize, Minimize,
-  Settings, LayoutGrid, ChevronUp, ChevronDown,
+  Settings, LayoutGrid, ChevronUp, ChevronDown, Volume2, VolumeX,
 } from "lucide-react";
 import { ChatTab } from "./chat-tab";
 
@@ -89,7 +89,20 @@ export function RoomView({ room, token, livekitUrl, userId, displayName }: Props
         connect={true}
         audio={false}
         video={false}
-        options={{ adaptiveStream: true }}
+        options={{
+          adaptiveStream: true,
+          publishDefaults: {
+            audioPreset: {
+              maxBitrate: 96000,
+            },
+            screenShareEncoding: { maxBitrate: 1500000 },
+          },
+          audioCaptureDefaults: {
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        }}
         onDisconnected={() => router.push("/")}
         style={{ display: "contents" }}
       >
@@ -307,9 +320,15 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
   const screenShareTracks = useTracks([
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
+  const screenAudioTracks = useTracks([
+    { source: Track.Source.ScreenShareAudio, withPlaceholder: false },
+  ]);
   const activeShare = screenShareTracks[0];
+  const activeAudio = screenAudioTracks[0];
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -325,6 +344,13 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
       track.setPlayoutDelay(bufferTime);
     }
   }, [activeShare?.publication?.track, bufferTime]);
+
+  useEffect(() => {
+    const track = activeAudio?.publication?.track;
+    if (track instanceof RemoteAudioTrack) {
+      track.setVolume(isAudioMuted ? 0 : 1);
+    }
+  }, [activeAudio?.publication?.track, isAudioMuted]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -344,13 +370,24 @@ function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
           className="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden shadow-2xl bg-black"
         >
           <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
-          <button
-            onClick={toggleFullscreen}
-            className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors z-10 shadow-lg border border-white/10"
-            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          >
-            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-          </button>
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+            {activeAudio && (
+              <button
+                onClick={() => setIsAudioMuted(!isAudioMuted)}
+                className="p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors shadow-lg border border-white/10"
+                aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
+              >
+                {isAudioMuted ? <VolumeX className="h-5 w-5 text-red-400" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+            )}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-lg bg-black/60 text-white backdrop-blur hover:bg-black/80 transition-colors shadow-lg border border-white/10"
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -521,6 +558,22 @@ function AppsTab({
   const sharerName =
     activeSharingParticipant?.name ?? activeSharingParticipant?.identity ?? "Someone";
 
+  // Fix: set contentHint='music' on the screen share audio track so the browser
+  // uses music-quality Opus encoding instead of speech mode, which causes the
+  // hollow/muffled sound heard when system audio is captured.
+  useEffect(() => {
+    if (!iAmSharing) return;
+    const timer = setTimeout(() => {
+      const pub = localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
+      const mst = (pub?.track as { mediaStreamTrack?: MediaStreamTrack } | undefined)
+        ?.mediaStreamTrack;
+      if (mst && "contentHint" in mst) {
+        mst.contentHint = "music";
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [iAmSharing, localParticipant]);
+
   const toggleScreenShare = async () => {
     if (someoneElseIsSharing) return;
     try {
@@ -533,9 +586,17 @@ function AppsTab({
           ? ScreenSharePresets.h720fps30
           : ScreenSharePresets.h720fps15;
       await localParticipant.setScreenShareEnabled(!iAmSharing, {
-        audio: true,
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 2, // Force stereo for high quality
+          sampleRate: 48000, // Studio quality sample rate
+        },
         resolution: preset,
-      });
+      // Pass publish options: use the highest-quality stereo audio preset for
+      // screen share audio so it's encoded as music, not speech (256kbps stereo).
+      }, { audioPreset: AudioPresets.musicHighQualityStereo, forceStereo: true });
     } catch (e) {
       console.error("Failed to toggle screen share", e);
     }
