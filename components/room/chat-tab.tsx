@@ -1,6 +1,5 @@
 "use client";
 
-import { useChat } from "@livekit/components-react";
 import type { ReceivedChatMessage } from "@livekit/components-core";
 import {
   useRef,
@@ -17,7 +16,10 @@ import {
 } from "@/components/ui/avatar";
 
 interface Props {
+  chatMessages: ReceivedChatMessage[];
+  isSending: boolean;
   localIdentity: string;
+  send: (message: string) => Promise<unknown>;
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -56,8 +58,7 @@ function getParticipantAvatarUrl(msg: ReceivedChatMessage) {
 
 // ── ChatTab component ─────────────────────────────────────────
 // Must be rendered inside a <LiveKitRoom> context.
-export function ChatTab({ localIdentity }: Props) {
-  const { chatMessages, send, isSending } = useChat();
+export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props) {
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);

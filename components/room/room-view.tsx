@@ -79,15 +79,15 @@ function RoomChrome({ userId }: { userId: string }) {
     screenQuality,
     screenFps,
   });
-  const { chatMessages } = useChat();
+  const chat = useChat();
   const router = useRouter();
   const chatIsActive = sidebarOpen && sidebarTab === "chat";
   const unreadChatCount = chatIsActive
     ? 0
-    : Math.max(0, chatMessages.length - seenChatCount);
+    : Math.max(0, chat.chatMessages.length - seenChatCount);
 
   const markChatSeen = () => {
-    setSeenChatCount(chatMessages.length);
+    setSeenChatCount(chat.chatMessages.length);
   };
 
   const openSidebarTo = (tab: SidebarTab) => {
@@ -204,7 +204,14 @@ function RoomChrome({ userId }: { userId: string }) {
               onToggleScreenShare={toggleScreenShare}
             />
           )}
-          {sidebarTab === "chat" && <ChatTab localIdentity={userId} />}
+          {sidebarTab === "chat" && (
+            <ChatTab
+              chatMessages={chat.chatMessages}
+              isSending={chat.isSending}
+              localIdentity={userId}
+              send={chat.send}
+            />
+          )}
           {sidebarTab === "social" && <div className="h-full bg-sidebar" />}
           {sidebarTab === "settings" && (
             <SettingsTab
