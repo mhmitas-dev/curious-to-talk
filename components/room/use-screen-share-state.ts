@@ -3,12 +3,15 @@
 import { useEffect } from "react";
 import { useLocalParticipant, useTracks } from "@livekit/components-react";
 import { AudioPresets, ScreenSharePresets, Track } from "livekit-client";
-import type { ScreenFPS, ScreenQuality, ScreenShareState } from "./room-types";
+import type { ScreenFPS, ScreenQuality, ScreenShareMode, ScreenShareState } from "./room-types";
 
 interface UseScreenShareStateInput {
+  screenShareMode: ScreenShareMode;
   screenQuality: ScreenQuality;
   screenFps: ScreenFPS;
 }
+
+const documentModeBitrate = 7_000_000;
 
 const screenShareBitrates: Record<ScreenQuality, Record<ScreenFPS, number>> = {
   "720p": {
@@ -22,6 +25,7 @@ const screenShareBitrates: Record<ScreenQuality, Record<ScreenFPS, number>> = {
 };
 
 export function useScreenShareState({
+  screenShareMode,
   screenQuality,
   screenFps,
 }: UseScreenShareStateInput) {
@@ -59,17 +63,22 @@ export function useScreenShareState({
   const toggleScreenShare = async () => {
     if (someoneElseIsSharing) return;
     try {
+      const effectiveQuality = screenShareMode === "document" ? "1080p" : screenQuality;
+      const effectiveFps = screenShareMode === "document" ? 15 : screenFps;
       const preset =
-        screenQuality === "1080p"
-          ? screenFps === 30
+        effectiveQuality === "1080p"
+          ? effectiveFps === 30
             ? ScreenSharePresets.h1080fps30
             : ScreenSharePresets.h1080fps15
-          : screenFps === 30
+          : effectiveFps === 30
           ? ScreenSharePresets.h720fps30
           : ScreenSharePresets.h720fps15;
       const screenShareEncoding = {
         ...preset.encoding,
-        maxBitrate: screenShareBitrates[screenQuality][screenFps],
+        maxBitrate:
+          screenShareMode === "document"
+            ? documentModeBitrate
+            : screenShareBitrates[screenQuality][screenFps],
       };
 
       await localParticipant.setScreenShareEnabled(!iAmSharing, {

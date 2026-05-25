@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { Monitor } from "lucide-react";
-import type { BufferTime, ScreenFPS, ScreenQuality } from "./room-types";
+import type { BufferTime, ScreenFPS, ScreenQuality, ScreenShareMode } from "./room-types";
 
 interface SettingsTabProps {
+  screenShareMode: ScreenShareMode;
+  setScreenShareMode: (mode: ScreenShareMode) => void;
   screenQuality: ScreenQuality;
   setScreenQuality: (q: ScreenQuality) => void;
   screenFps: ScreenFPS;
@@ -14,6 +16,8 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({
+  screenShareMode,
+  setScreenShareMode,
   screenQuality,
   setScreenQuality,
   screenFps,
@@ -65,6 +69,18 @@ export function SettingsTab({
       </div>
 
       <div className="flex flex-col gap-5 px-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-primary text-center">Mode</label>
+          <select
+            value={screenShareMode}
+            onChange={(e) => setScreenShareMode(e.target.value as ScreenShareMode)}
+            className="bg-card text-sm border border-border rounded-lg px-3 py-2.5 text-foreground outline-none focus:border-primary cursor-pointer"
+          >
+            <option value="standard">Standard</option>
+            <option value="document">Document</option>
+          </select>
+        </div>
+
         <div className="flex gap-4">
           <div className="flex-1 flex flex-col gap-1.5">
             <label className="text-xs font-medium text-primary text-center">Quality</label>

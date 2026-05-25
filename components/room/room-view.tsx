@@ -7,7 +7,13 @@ import { LayoutGrid, MessageSquare, Settings, UsersRound, X } from "lucide-react
 import { AppsTab } from "./apps-tab";
 import { ChatTab } from "./chat-tab";
 import { ParticipantPanel } from "./participant-panel";
-import type { BufferTime, ScreenFPS, ScreenQuality, SidebarTab } from "./room-types";
+import type {
+  BufferTime,
+  ScreenFPS,
+  ScreenQuality,
+  ScreenShareMode,
+  SidebarTab,
+} from "./room-types";
 import { SettingsTab } from "./settings-tab";
 import { TopBar } from "./top-bar";
 import { useLocalStorage } from "./use-local-storage";
@@ -61,10 +67,15 @@ function RoomChrome({ userId }: { userId: string }) {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chat");
   const [participantsExpanded, setParticipantsExpanded] = useState(false);
   const [seenChatCount, setSeenChatCount] = useState(0);
+  const [screenShareMode, setScreenShareMode] = useLocalStorage<ScreenShareMode>(
+    "ctt_screenShareMode",
+    "standard"
+  );
   const [screenQuality, setScreenQuality] = useLocalStorage<ScreenQuality>("ctt_screenQuality", "720p");
   const [screenFps, setScreenFps] = useLocalStorage<ScreenFPS>("ctt_screenFps", 30);
   const [bufferTime, setBufferTime] = useLocalStorage<BufferTime>("ctt_bufferTime", 0);
   const { screenShare, toggleScreenShare } = useScreenShareState({
+    screenShareMode,
     screenQuality,
     screenFps,
   });
@@ -197,6 +208,8 @@ function RoomChrome({ userId }: { userId: string }) {
           {sidebarTab === "social" && <div className="h-full bg-sidebar" />}
           {sidebarTab === "settings" && (
             <SettingsTab
+              screenShareMode={screenShareMode}
+              setScreenShareMode={setScreenShareMode}
               screenQuality={screenQuality}
               setScreenQuality={setScreenQuality}
               screenFps={screenFps}
