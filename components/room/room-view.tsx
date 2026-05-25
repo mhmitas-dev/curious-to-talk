@@ -37,6 +37,9 @@ export function RoomView({ token, livekitUrl, userId }: Props) {
             audioPreset: {
               maxBitrate: 96000,
             },
+            // Release the physical mic when muted so the browser/device indicator turns off.
+            // Revert this if faster mic unmute or Bluetooth audio profile stability matters more.
+            stopMicTrackOnMute: true,
             screenShareEncoding: { maxBitrate: 1500000 },
           },
           audioCaptureDefaults: {
