@@ -11,6 +11,7 @@ import type { BufferTime, ScreenFPS, ScreenQuality, SidebarTab } from "./room-ty
 import { SettingsTab } from "./settings-tab";
 import { TopBar } from "./top-bar";
 import { useLocalStorage } from "./use-local-storage";
+import { useScreenShareState } from "./use-screen-share-state";
 import { VoiceStage } from "./voice-stage";
 
 interface Props {
@@ -61,6 +62,10 @@ function RoomChrome({ userId }: { userId: string }) {
   const [screenQuality, setScreenQuality] = useLocalStorage<ScreenQuality>("ctt_screenQuality", "720p");
   const [screenFps, setScreenFps] = useLocalStorage<ScreenFPS>("ctt_screenFps", 30);
   const [bufferTime, setBufferTime] = useLocalStorage<BufferTime>("ctt_bufferTime", 0);
+  const { screenShare, toggleScreenShare } = useScreenShareState({
+    screenQuality,
+    screenFps,
+  });
   const { chatMessages } = useChat();
   const router = useRouter();
   const chatIsActive = sidebarOpen && sidebarTab === "chat";
@@ -179,7 +184,12 @@ function RoomChrome({ userId }: { userId: string }) {
 
         <div className="flex-1 overflow-y-auto">
           {sidebarTab === "apps" && (
-            <AppsTab screenQuality={screenQuality} screenFps={screenFps} />
+            <AppsTab
+              screenQuality={screenQuality}
+              screenFps={screenFps}
+              screenShare={screenShare}
+              onToggleScreenShare={toggleScreenShare}
+            />
           )}
           {sidebarTab === "chat" && <ChatTab localIdentity={userId} />}
           {sidebarTab === "social" && <div className="h-full bg-sidebar" />}
