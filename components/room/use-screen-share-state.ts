@@ -10,6 +10,17 @@ interface UseScreenShareStateInput {
   screenFps: ScreenFPS;
 }
 
+const screenShareBitrates: Record<ScreenQuality, Record<ScreenFPS, number>> = {
+  "720p": {
+    15: 1_800_000,
+    30: 2_800_000,
+  },
+  "1080p": {
+    15: 3_500_000,
+    30: 5_500_000,
+  },
+};
+
 export function useScreenShareState({
   screenQuality,
   screenFps,
@@ -28,11 +39,18 @@ export function useScreenShareState({
   useEffect(() => {
     if (!iAmSharing) return;
     const timer = setTimeout(() => {
-      const pub = localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
-      const mst = (pub?.track as { mediaStreamTrack?: MediaStreamTrack } | undefined)
+      const screenPub = localParticipant.getTrackPublication(Track.Source.ScreenShare);
+      const screenTrack = (screenPub?.track as { mediaStreamTrack?: MediaStreamTrack } | undefined)
         ?.mediaStreamTrack;
-      if (mst && "contentHint" in mst) {
-        mst.contentHint = "music";
+      if (screenTrack && "contentHint" in screenTrack) {
+        screenTrack.contentHint = "detail";
+      }
+
+      const audioPub = localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
+      const audioTrack = (audioPub?.track as { mediaStreamTrack?: MediaStreamTrack } | undefined)
+        ?.mediaStreamTrack;
+      if (audioTrack && "contentHint" in audioTrack) {
+        audioTrack.contentHint = "music";
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -49,6 +67,10 @@ export function useScreenShareState({
           : screenFps === 30
           ? ScreenSharePresets.h720fps30
           : ScreenSharePresets.h720fps15;
+      const screenShareEncoding = {
+        ...preset.encoding,
+        maxBitrate: screenShareBitrates[screenQuality][screenFps],
+      };
 
       await localParticipant.setScreenShareEnabled(!iAmSharing, {
         audio: {
@@ -59,7 +81,12 @@ export function useScreenShareState({
           sampleRate: 48000,
         },
         resolution: preset,
-      }, { audioPreset: AudioPresets.musicHighQualityStereo, forceStereo: true });
+      }, {
+        audioPreset: AudioPresets.musicHighQualityStereo,
+        degradationPreference: "maintain-resolution",
+        forceStereo: true,
+        screenShareEncoding,
+      });
     } catch (e) {
       console.error("Failed to toggle screen share", e);
     }
