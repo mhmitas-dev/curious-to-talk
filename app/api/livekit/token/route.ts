@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { AccessToken } from "livekit-server-sdk";
 import { getApprovedAuthForApi } from "@/lib/auth/server";
+import { createRoomToken, getLiveKitUrl } from "@/lib/livekit/server";
 
 export async function POST(request: Request) {
   try {
@@ -41,35 +41,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    // ── Generate LiveKit token ───────────────────────────────
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
-
-    if (!apiKey || !apiSecret) {
-      console.error("LIVEKIT_API_KEY or LIVEKIT_API_SECRET is not set");
-      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-    }
-
-    const token = new AccessToken(apiKey, apiSecret, {
-      identity: auth.userId,          // unique participant ID (Supabase user ID)
-      name: auth.profile.display_name, // display name shown to other participants
-      metadata: JSON.stringify({ avatar_url: auth.profile.avatar_url }),
-      ttl: "4h",                  // token expires after 4 hours
+    const token = await createRoomToken({
+      roomId: room.id,
+      participant: {
+        id: auth.userId,
+        displayName: auth.profile.display_name,
+        avatarUrl: auth.profile.avatar_url,
+      },
     });
-
-    token.addGrant({
-      roomJoin: true,
-      room: room.id,      // use the room's UUID as the LiveKit room name
-      canPublish: true,   // participant can share their microphone
-      canSubscribe: true, // participant can hear others
-      canUpdateOwnMetadata: true, // participant can share youtube links, etc.
-    });
-
-    const jwt = await token.toJwt();
+    const livekitUrl = getLiveKitUrl();
 
     return NextResponse.json({
-      token: jwt,
-      url: process.env.LIVEKIT_URL,
+      token,
+      url: livekitUrl,
       roomName: room.name,
     });
   } catch (err) {

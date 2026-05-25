@@ -54,11 +54,18 @@ CREATE POLICY "profiles_select"
   ON public.profiles FOR SELECT
   USING (auth.uid() = id OR private.is_admin());
 
--- Only admins can update status (e.g., approve users)
+-- Admins can update any profile field, including status/is_admin.
 CREATE POLICY "profiles_update"
   ON public.profiles FOR UPDATE
   USING (private.is_admin())
   WITH CHECK (private.is_admin());
+
+-- Users can sync editable profile fields on their own row
+-- (e.g., Google display name/avatar updates during OAuth callback).
+CREATE POLICY "profiles_update_own_name"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
 -- ── Rooms RLS policies ────────────────────────────────────────
 -- Approved users can read rooms
@@ -76,6 +83,12 @@ CREATE POLICY "rooms_insert"
   ON public.rooms FOR INSERT
   WITH CHECK (private.is_admin());
 
+-- Only admins can update rooms
+CREATE POLICY "rooms_update"
+  ON public.rooms FOR UPDATE
+  USING (private.is_admin())
+  WITH CHECK (private.is_admin());
+
 -- Only admins can delete rooms
 CREATE POLICY "rooms_delete"
   ON public.rooms FOR DELETE
@@ -84,7 +97,7 @@ CREATE POLICY "rooms_delete"
 -- ── Grant Data API access to authenticated users ──────────────
 -- Required because new Supabase projects don't expose tables automatically
 GRANT SELECT, UPDATE ON public.profiles TO authenticated;
-GRANT SELECT, INSERT, DELETE ON public.rooms TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.rooms TO authenticated;
 
 -- ── Trigger: auto-create profile on signup ────────────────────
 CREATE OR REPLACE FUNCTION public.handle_new_user()

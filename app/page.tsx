@@ -1,8 +1,13 @@
 import { logout } from "@/app/actions/auth";
+import { requireApprovedProfile, type AuthProfile } from "@/lib/auth/server";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
 import Link from "next/link";
-import { requireApprovedProfile } from "@/lib/auth/server";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,153 +16,198 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface Room {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+const voiceIconStyle = {
+  background:
+    "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.2), oklch(0.45 0.20 300 / 0.2))",
+  border: "1px solid oklch(0.60 0.22 285 / 0.3)",
+};
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export default async function HomePage() {
   const { supabase, profile } = await requireApprovedProfile();
 
-  // Fetch rooms (will be empty for now)
   const { data: rooms } = await supabase
     .from("rooms")
     .select("id, name, description")
     .order("created_at", { ascending: true });
 
-  const initials = profile.display_name
-    .split(" ")
-    .map((w: string) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
   return (
     <div className="flex min-h-screen flex-col">
-      {/* ── Header ───────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🎙️</span>
-            <span className="font-semibold text-foreground tracking-tight">
-              Curious to Talk
-            </span>
-          </div>
+      <HomeHeader profile={profile} />
 
-          <div className="flex items-center gap-3">
-            {profile.is_admin && (
-              <a href="/admin/users">
-                <Badge
-                  variant="outline"
-                  className="border-primary/40 text-primary text-xs cursor-pointer hover:bg-primary/10 transition-colors"
-                >
-                  Admin
-                </Badge>
-              </a>
-            )}
-
-            {/* Avatar Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="outline-none">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.display_name}
-                    className="flex h-8 w-8 items-center justify-center rounded-full shadow-sm object-cover transition-transform hover:scale-105 active:scale-95"
-                  />
-                ) : (
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none transition-transform hover:scale-105 active:scale-95"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-                    }}
-                    title={profile.display_name}
-                  >
-                    {initials}
-                  </div>
-                )}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1.5 text-sm font-medium">
-                  {profile.display_name}
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem render={<Link href="/profile" />} className="cursor-pointer">
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <form action={logout}>
-                  <DropdownMenuItem render={<button type="submit" />} className="w-full text-left cursor-pointer text-destructive focus:text-destructive">
-                    Sign out
-                  </DropdownMenuItem>
-                </form>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Main ─────────────────────────────────────────────── */}
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Rooms
-          </h2>
-        </div>
+        <SectionHeading>Rooms</SectionHeading>
 
-        {/* Admin room creation form */}
         {profile.is_admin && <CreateRoomForm />}
 
         {rooms && rooms.length > 0 ? (
-          <ul className="flex flex-col gap-3">
-            {rooms.map((room) => (
-              <li key={room.id}>
-                <a
-                  href={`/rooms/${room.id}`}
-                  className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-accent"
-                >
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.2), oklch(0.45 0.20 300 / 0.2))",
-                      border: "1px solid oklch(0.60 0.22 285 / 0.3)",
-                    }}
-                  >
-                    🔊
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">
-                      {room.name}
-                    </p>
-                    {room.description && (
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {room.description}
-                      </p>
-                    )}
-                  </div>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <RoomsList rooms={rooms} />
         ) : (
-          /* ── Empty state ─────────────────────────────────── */
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div
-              className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.15), oklch(0.45 0.20 300 / 0.15))",
-                border: "1px solid oklch(0.60 0.22 285 / 0.2)",
-              }}
-            >
-              🔇
-            </div>
-            <p className="font-medium text-foreground">No rooms yet</p>
-            <p className="mt-1 text-sm text-muted-foreground max-w-xs">
-              {profile.is_admin
-                ? "Create the first room to get the conversation started."
-                : "The admin hasn't created any rooms yet. Check back soon!"}
-            </p>
-          </div>
+          <EmptyRoomsState isAdmin={profile.is_admin} />
         )}
       </main>
+    </div>
+  );
+}
+
+function HomeHeader({ profile }: { profile: AuthProfile }) {
+  return (
+    <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-lg" aria-hidden>
+            🎙️
+          </span>
+          <span className="font-semibold text-foreground tracking-tight">
+            Curious to Talk
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          {profile.is_admin && <AdminLink />}
+          <ProfileMenu profile={profile} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function AdminLink() {
+  return (
+    <Link href="/admin/users">
+      <Badge
+        variant="outline"
+        className="border-primary/40 text-primary text-xs cursor-pointer hover:bg-primary/10 transition-colors"
+      >
+        Admin
+      </Badge>
+    </Link>
+  );
+}
+
+function ProfileMenu({ profile }: { profile: AuthProfile }) {
+  const initials = getInitials(profile.display_name);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="outline-none">
+        <Avatar className="h-8 w-8 shadow-sm transition-transform hover:scale-105 active:scale-95">
+          {profile.avatar_url && (
+            <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+          )}
+          <AvatarFallback
+            className="text-xs font-semibold text-primary-foreground"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+            }}
+          >
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <div className="px-2 py-1.5 text-sm font-medium">
+          {profile.display_name}
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/profile" />} className="cursor-pointer">
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <form action={logout}>
+          <DropdownMenuItem
+            render={<button type="submit" />}
+            className="w-full text-left cursor-pointer text-destructive focus:text-destructive"
+          >
+            Sign out
+          </DropdownMenuItem>
+        </form>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-5 flex items-center justify-between">
+      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+        {children}
+      </h2>
+    </div>
+  );
+}
+
+function RoomsList({ rooms }: { rooms: Room[] }) {
+  return (
+    <ul className="flex flex-col gap-3">
+      {rooms.map((room) => (
+        <li key={room.id}>
+          <RoomListItem room={room} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RoomListItem({ room }: { room: Room }) {
+  return (
+    <Link
+      href={`/rooms/${room.id}`}
+      className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-accent"
+    >
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
+        style={voiceIconStyle}
+      >
+        🔊
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-foreground truncate">{room.name}</p>
+        {room.description && (
+          <p className="text-sm text-muted-foreground truncate mt-0.5">
+            {room.description}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function EmptyRoomsState({ isAdmin }: { isAdmin: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div
+        className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+        style={{
+          ...voiceIconStyle,
+          background:
+            "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.15), oklch(0.45 0.20 300 / 0.15))",
+          border: "1px solid oklch(0.60 0.22 285 / 0.2)",
+        }}
+      >
+        🔇
+      </div>
+      <p className="font-medium text-foreground">No rooms yet</p>
+      <p className="mt-1 text-sm text-muted-foreground max-w-xs">
+        {isAdmin
+          ? "Create the first room to get the conversation started."
+          : "The admin hasn't created any rooms yet. Check back soon!"}
+      </p>
     </div>
   );
 }
