@@ -7,6 +7,12 @@
       "skillPath": "plugins/frontend-design/skills/frontend-design/SKILL.md",
       "computedHash": "e8118284a6365753790d44bb2758a6032b3af27fa84696428d9233f2be0f4e78"
     },
+    "livekit-agents": {
+      "source": "livekit/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/livekit-agents/SKILL.md",
+      "computedHash": "373669b9a938ced840f301173e838a0046408acd0397c02c03420cc9b6a8cb42"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",

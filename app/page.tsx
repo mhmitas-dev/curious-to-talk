@@ -1,5 +1,6 @@
 import { logout } from "@/app/actions/auth";
 import { requireApprovedProfile, type AuthProfile } from "@/lib/auth/server";
+import { getLiveKitRoomParticipantCounts } from "@/lib/livekit/server";
 import {
   Avatar,
   AvatarFallback,
@@ -15,11 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UsersRound } from "lucide-react";
 
 interface Room {
   id: string;
   name: string;
   description: string | null;
+  participantCount: number;
 }
 
 const voiceIconStyle = {
@@ -44,6 +47,12 @@ export default async function HomePage() {
     .from("rooms")
     .select("id, name, description")
     .order("created_at", { ascending: true });
+  const roomRows = rooms ?? [];
+  const participantCounts = await getRoomParticipantCounts(roomRows.map((room) => room.id));
+  const roomsWithPresence = roomRows.map((room) => ({
+    ...room,
+    participantCount: participantCounts.get(room.id) ?? 0,
+  }));
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -54,14 +63,23 @@ export default async function HomePage() {
 
         {profile.is_admin && <CreateRoomForm />}
 
-        {rooms && rooms.length > 0 ? (
-          <RoomsList rooms={rooms} />
+        {roomsWithPresence.length > 0 ? (
+          <RoomsList rooms={roomsWithPresence} />
         ) : (
           <EmptyRoomsState isAdmin={profile.is_admin} />
         )}
       </main>
     </div>
   );
+}
+
+async function getRoomParticipantCounts(roomIds: string[]) {
+  try {
+    return await getLiveKitRoomParticipantCounts(roomIds);
+  } catch (error) {
+    console.error("Failed to load LiveKit room participant counts", error);
+    return new Map<string, number>();
+  }
 }
 
 function HomeHeader({ profile }: { profile: AuthProfile }) {
@@ -165,6 +183,10 @@ function RoomsList({ rooms }: { rooms: Room[] }) {
 }
 
 function RoomListItem({ room }: { room: Room }) {
+  const hasParticipants = room.participantCount > 0;
+  const participantLabel =
+    room.participantCount > 99 ? "99+ here" : `${room.participantCount} here`;
+
   return (
     <Link
       href={`/rooms/${room.id}`}
@@ -183,6 +205,22 @@ function RoomListItem({ room }: { room: Room }) {
             {room.description}
           </p>
         )}
+      </div>
+      <div
+        className={`flex min-w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+          hasParticipants
+            ? "bg-primary/10 text-primary"
+            : "bg-muted text-muted-foreground"
+        }`}
+        aria-label={`${room.participantCount} participant${
+          room.participantCount === 1 ? "" : "s"
+        } in ${room.name}`}
+        title={`${room.participantCount} participant${
+          room.participantCount === 1 ? "" : "s"
+        } in ${room.name}`}
+      >
+        <UsersRound className="h-3.5 w-3.5" />
+        <span>{hasParticipants ? participantLabel : "Empty"}</span>
       </div>
     </Link>
   );

@@ -1,5 +1,5 @@
 import "server-only";
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 
 export interface LiveKitParticipantProfile {
   id: string;
@@ -49,4 +49,25 @@ export function getLiveKitUrl() {
   }
 
   return livekitUrl;
+}
+
+function getLiveKitCredentials() {
+  const apiKey = process.env.LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    throw new Error("LIVEKIT_API_KEY or LIVEKIT_API_SECRET is not set");
+  }
+
+  return { apiKey, apiSecret };
+}
+
+export async function getLiveKitRoomParticipantCounts(roomIds: string[]) {
+  if (roomIds.length === 0) return new Map<string, number>();
+
+  const { apiKey, apiSecret } = getLiveKitCredentials();
+  const client = new RoomServiceClient(getLiveKitUrl(), apiKey, apiSecret);
+  const liveRooms = await client.listRooms(roomIds);
+
+  return new Map(liveRooms.map((room) => [room.name, room.numParticipants]));
 }
