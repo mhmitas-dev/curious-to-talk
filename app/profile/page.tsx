@@ -1,21 +1,16 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentProfile,
+  requireClaims,
+  throwIfUnexpectedProfileError,
+} from "@/lib/auth/server";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  const userId = authData.claims.sub;
-  const email = authData.claims.email;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, status, is_admin, avatar_url")
-    .eq("id", userId)
-    .single();
+  const auth = await requireClaims();
+  const email = auth.claims.email;
+  const { profile, error } = await getCurrentProfile(auth);
+  throwIfUnexpectedProfileError(error);
 
   if (!profile) redirect("/login");
 

@@ -1,23 +1,10 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminProfile } from "@/lib/auth/server";
 import { Badge } from "@/components/ui/badge";
 import { AdminRoomsList } from "@/components/admin-rooms-list";
 
 export default async function AdminRoomsPage() {
-  const supabase = await createClient();
-
-  // Verify admin (defence in depth)
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  const { data: caller } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", authData.claims.sub)
-    .single();
-
-  if (!caller?.is_admin) redirect("/");
+  const { supabase } = await requireAdminProfile();
 
   // Fetch all rooms from DB
   const { data: rooms } = await supabase

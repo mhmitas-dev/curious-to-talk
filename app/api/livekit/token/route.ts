@@ -1,39 +1,37 @@
 import { NextResponse } from "next/server";
-import { AccessToken } from "livekit-server-sdk";
-import { createClient } from "@/lib/supabase/server";
+import { getApprovedAuthForApi } from "@/lib/auth/server";
+import { createRoomToken, getLiveKitUrl } from "@/lib/livekit/server";
 
 export async function POST(request: Request) {
   try {
     // ── Auth check ──────────────────────────────────────────
-    const supabase = await createClient();
-    const { data: authData } = await supabase.auth.getClaims();
-
-    if (!authData?.claims) {
+    const auth = await getApprovedAuthForApi();
+    if (auth.status === "unauthenticated") {
       return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
     }
-
-    const userId = authData.claims.sub;
-
-    // Verify the user is approved (not just logged in)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name, status, avatar_url")
-      .eq("id", userId)
-      .single();
-
-    if (!profile || profile.status !== "approved") {
+    if (auth.status === "forbidden") {
       return NextResponse.json({ error: "Unauthorised" }, { status: 403 });
     }
 
     // ── Parse request body ───────────────────────────────────
-    const { roomId } = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const roomId =
+      body && typeof body === "object" && "roomId" in body
+        ? (body as { roomId?: unknown }).roomId
+        : undefined;
 
     if (!roomId || typeof roomId !== "string") {
       return NextResponse.json({ error: "roomId is required" }, { status: 400 });
     }
 
     // Verify the room exists in the DB
-    const { data: room } = await supabase
+    const { data: room } = await auth.supabase
       .from("rooms")
       .select("id, name")
       .eq("id", roomId)
@@ -43,35 +41,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    // ── Generate LiveKit token ───────────────────────────────
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
-
-    if (!apiKey || !apiSecret) {
-      console.error("LIVEKIT_API_KEY or LIVEKIT_API_SECRET is not set");
-      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-    }
-
-    const token = new AccessToken(apiKey, apiSecret, {
-      identity: userId,          // unique participant ID (Supabase user ID)
-      name: profile.display_name, // display name shown to other participants
-      metadata: JSON.stringify({ avatar_url: profile.avatar_url }),
-      ttl: "4h",                  // token expires after 4 hours
+    const token = await createRoomToken({
+      roomId: room.id,
+      participant: {
+        id: auth.userId,
+        displayName: auth.profile.display_name,
+        avatarUrl: auth.profile.avatar_url,
+      },
     });
-
-    token.addGrant({
-      roomJoin: true,
-      room: room.id,      // use the room's UUID as the LiveKit room name
-      canPublish: true,   // participant can share their microphone
-      canSubscribe: true, // participant can hear others
-      canUpdateOwnMetadata: true, // participant can share youtube links, etc.
-    });
-
-    const jwt = await token.toJwt();
+    const livekitUrl = getLiveKitUrl();
 
     return NextResponse.json({
-      token: jwt,
-      url: process.env.LIVEKIT_URL,
+      token,
+      url: livekitUrl,
       roomName: room.name,
     });
   } catch (err) {

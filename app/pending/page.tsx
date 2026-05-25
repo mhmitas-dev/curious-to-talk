@@ -1,21 +1,18 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
+import {
+  getCurrentProfile,
+  requireClaims,
+  throwIfUnexpectedProfileError,
+} from "@/lib/auth/server";
 
 export default async function PendingPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-
-  if (!data?.claims) {
-    redirect("/login");
-  }
+  const auth = await requireClaims();
 
   // If somehow an approved user lands here, send them home
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("status, display_name")
-    .single();
+  const { profile, error } = await getCurrentProfile(auth);
+  throwIfUnexpectedProfileError(error);
 
   if (profile?.status === "approved") {
     redirect("/");

@@ -9,7 +9,12 @@ import {
   useCallback,
   type KeyboardEvent,
 } from "react";
-import { Send } from "lucide-react";
+import { Heart, Image as ImageIcon, ImagePlay, Paperclip, Reply, Send, Smile } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 interface Props {
   localIdentity: string;
@@ -21,6 +26,32 @@ function formatTime(timestamp: number) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "?";
+}
+
+function getParticipantAvatarUrl(msg: ReceivedChatMessage) {
+  const identity = msg.from?.identity ?? "unknown";
+
+  if (msg.from?.metadata) {
+    try {
+      const meta = JSON.parse(msg.from.metadata);
+      if (typeof meta.avatar_url === "string" && meta.avatar_url.length > 0) {
+        return meta.avatar_url;
+      }
+    } catch (e) {
+      console.error("Failed to parse chat participant metadata", e);
+    }
+  }
+
+  return `https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(identity)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
 // ── ChatTab component ─────────────────────────────────────────
@@ -53,9 +84,8 @@ export function ChatTab({ localIdentity }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* ── Messages ─────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
+    <div className="flex h-full flex-col bg-sidebar">
+      <div className="flex-1 overflow-y-auto px-2.5 py-3 flex flex-col gap-3 md:px-3 md:py-4">
         {chatMessages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-10">
             <p className="text-xs text-muted-foreground text-center">
@@ -73,36 +103,47 @@ export function ChatTab({ localIdentity }: Props) {
             />
           ))
         )}
-        {/* Invisible anchor for auto-scroll */}
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input bar ────────────────────────────────────── */}
-      <div className="shrink-0 border-t border-border p-3 flex gap-2 items-end">
-        <textarea
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Message…"
-          rows={1}
-          className="flex-1 resize-none rounded-2xl bg-accent border border-border px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:ring-0 transition-colors max-h-28 overflow-y-auto"
-          style={{ lineHeight: "1.4" }}
-        />
-        <button
-          onClick={handleSend}
-          disabled={!draft.trim() || isSending}
-          className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{
-            background:
-              draft.trim() && !isSending
-                ? "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))"
-                : "oklch(0.22 0.01 265)",
-          }}
-          aria-label="Send message"
-        >
-          <Send className="h-4 w-4 text-white ml-0.5" />
-        </button>
+      <div className="shrink-0 border-t border-border bg-sidebar shadow-lg focus-within:border-primary">
+        <div className="overflow-hidden bg-background shadow-md">
+          <textarea
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Message..."
+            rows={2}
+            className="min-h-[58px] max-h-24 w-full resize-none rounded-t-xl bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
+          />
+
+          <div className="flex h-9 items-stretch justify-between bg-card">
+            <div className="flex items-stretch">
+              <ComposerPlaceholderButton label="Add image">
+                <ImageIcon className="h-4 w-4" />
+              </ComposerPlaceholderButton>
+              <ComposerPlaceholderButton label="Add GIF">
+                <ImagePlay className="h-4 w-4" />
+              </ComposerPlaceholderButton>
+              <ComposerPlaceholderButton label="Add emoji">
+                <Smile className="h-4 w-4" />
+              </ComposerPlaceholderButton>
+              <ComposerPlaceholderButton label="Attach file">
+                <Paperclip className="h-4 w-4" />
+              </ComposerPlaceholderButton>
+            </div>
+
+            <button
+              onClick={handleSend}
+              disabled={!draft.trim() || isSending}
+              className="mr-0 flex h-9 w-12 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-all active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4 ml-0.5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -117,42 +158,87 @@ function ChatBubble({
   isOwn: boolean;
 }) {
   const senderName = msg.from?.name ?? msg.from?.identity ?? "Unknown";
+  const avatarUrl = getParticipantAvatarUrl(msg);
+  const timestamp = formatTime(msg.timestamp);
 
   return (
-    <div className={`flex flex-col gap-1 ${isOwn ? "items-end" : "items-start"}`}>
-      {/* Sender name — only show for others */}
-      {!isOwn && (
-        <span className="px-1 text-[10px] font-medium text-muted-foreground">
-          {senderName}
-        </span>
-      )}
+    <div className={`group flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
+      <Avatar size="sm" className="mt-1 h-8 w-8 bg-muted shadow-sm">
+        <AvatarImage src={avatarUrl} alt={senderName} />
+        <AvatarFallback className="text-[10px] font-semibold">
+          {getInitials(senderName)}
+        </AvatarFallback>
+      </Avatar>
 
-      {/* Bubble */}
-      <div
-        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
-          isOwn
-            ? "text-white"
-            : "bg-secondary border border-border text-secondary-foreground"
-        }`}
-        style={
-          isOwn
-            ? {
-                background:
-                  "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))",
-                borderBottomRightRadius: "4px",
-              }
-            : {
-                borderBottomLeftRadius: "4px",
-              }
-        }
-      >
-        {msg.message}
+      <div className={`flex min-w-0 max-w-[86%] flex-col gap-1.5 ${isOwn ? "items-end" : "items-start"}`}>
+        <div className={`flex max-w-full items-baseline gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
+          <span className="truncate text-[12px] font-semibold leading-none text-foreground">
+            {isOwn ? "You" : senderName}
+          </span>
+          <span className="shrink-0 text-[10px] font-medium leading-none text-muted-foreground">
+            {timestamp}
+          </span>
+        </div>
+
+        <div
+          className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
+            isOwn
+              ? "bg-primary text-primary-foreground"
+              : "bg-card text-secondary-foreground"
+          }`}
+        >
+          {msg.message}
+        </div>
+
+        <div className={`flex items-center gap-1 ${isOwn ? "flex-row-reverse" : ""}`}>
+          <MessagePlaceholderButton label="React to message">
+            <Heart className="h-3.5 w-3.5" />
+          </MessagePlaceholderButton>
+          <MessagePlaceholderButton label="Reply to message">
+            <Reply className="h-3.5 w-3.5" />
+          </MessagePlaceholderButton>
+        </div>
       </div>
-
-      {/* Timestamp */}
-      <span className="px-1 text-[10px] text-muted-foreground/60">
-        {formatTime(msg.timestamp)}
-      </span>
     </div>
+  );
+}
+
+function ComposerPlaceholderButton({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled
+      className="flex h-9 w-9 items-center justify-center text-muted-foreground opacity-60 cursor-not-allowed"
+      aria-label={`${label} (coming soon)`}
+      title={`${label} (coming soon)`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MessagePlaceholderButton({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled
+      className="flex h-6 w-6 items-center justify-center rounded-md bg-background text-muted-foreground opacity-60 shadow-sm cursor-not-allowed"
+      aria-label={`${label} (coming soon)`}
+      title={`${label} (coming soon)`}
+    >
+      {children}
+    </button>
   );
 }

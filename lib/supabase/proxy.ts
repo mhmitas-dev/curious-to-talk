@@ -33,18 +33,16 @@ export async function updateSession(request: NextRequest) {
   );
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
   // issues with cross-browser cookies, so just do it exactly this way.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
 
   const { pathname } = request.nextUrl;
 
   const isPublicPath =
     pathname.startsWith("/login") || pathname.startsWith("/api/auth/callback");
 
-  if (!user && !isPublicPath) {
+  if (!data?.claims && !isPublicPath) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";
