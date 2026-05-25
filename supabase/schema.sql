@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   is_admin      boolean     NOT NULL DEFAULT false,
   status        text        NOT NULL DEFAULT 'pending'
                             CHECK (status IN ('pending', 'approved')),
+  avatar_url    text,
   created_at    timestamptz NOT NULL DEFAULT now()
 );
 
@@ -93,11 +94,20 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, display_name, status)
+  INSERT INTO public.profiles (id, display_name, status, avatar_url)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'display_name', 'User'),
-    'pending'
+    COALESCE(
+      NEW.raw_user_meta_data->>'display_name',
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      'User'
+    ),
+    'pending',
+    COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture'
+    )
   );
   RETURN NEW;
 END;

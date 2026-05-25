@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentProfile,
+  getOptionalClaims,
+  throwIfUnexpectedProfileError,
+} from "@/lib/auth/server";
 
 // If user is already logged in, send them home.
 export default async function AuthLayout({
@@ -7,10 +11,16 @@ export default async function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
+  const auth = await getOptionalClaims();
 
-  if (data?.claims) {
+  if (auth) {
+    const { profile, error } = await getCurrentProfile(auth);
+    throwIfUnexpectedProfileError(error);
+
+    if (!profile || profile.status === "pending") {
+      redirect("/pending");
+    }
+
     redirect("/");
   }
 

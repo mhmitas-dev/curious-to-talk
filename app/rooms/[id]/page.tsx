@@ -1,6 +1,6 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AccessToken } from "livekit-server-sdk";
-import { createClient } from "@/lib/supabase/server";
+import { requireApprovedProfile } from "@/lib/auth/server";
 import { RoomView } from "@/components/room/room-view";
 
 interface Props {
@@ -10,20 +10,7 @@ interface Props {
 export default async function RoomPage({ params }: Props) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  const userId = authData.claims.sub;
-
-  // Check user is approved
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, status, avatar_url")
-    .eq("id", userId)
-    .single();
-
-  if (!profile || profile.status !== "approved") redirect("/pending");
+  const { supabase, userId, profile } = await requireApprovedProfile();
 
   // Fetch the room
   const { data: room } = await supabase
@@ -50,6 +37,8 @@ export default async function RoomPage({ params }: Props) {
     room: room.id,
     canPublish: true,
     canSubscribe: true,
+    // Keep browser and API-minted room tokens aligned.
+    canUpdateOwnMetadata: true,
   });
   const jwt = await token.toJwt();
 

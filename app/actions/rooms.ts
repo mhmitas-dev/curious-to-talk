@@ -1,8 +1,7 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminAuthForAction } from "@/lib/auth/server";
 
 export type RoomState = { error: string } | undefined;
 
@@ -17,26 +16,15 @@ export async function createRoom(
     return { error: "Room name must be at least 2 characters." };
   }
 
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getClaims();
-
-  if (!authData?.claims) redirect("/login");
-
-  // Verify caller is admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", authData.claims.sub)
-    .single();
-
-  if (!profile?.is_admin) {
+  const auth = await getAdminAuthForAction();
+  if (!auth) {
     return { error: "Only admins can create rooms." };
   }
 
-  const { error } = await supabase.from("rooms").insert({
+  const { error } = await auth.supabase.from("rooms").insert({
     name,
     description,
-    created_by: authData.claims.sub,
+    created_by: auth.userId,
   });
 
   if (error) {
@@ -53,22 +41,12 @@ export async function deleteRoom(
   const roomId = formData.get("roomId") as string;
   if (!roomId) return { error: "Room ID is required." };
 
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  // Verify caller is admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", authData.claims.sub)
-    .single();
-
-  if (!profile?.is_admin) {
+  const auth = await getAdminAuthForAction();
+  if (!auth) {
     return { error: "Only admins can delete rooms." };
   }
 
-  const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+  const { error } = await auth.supabase.from("rooms").delete().eq("id", roomId);
   if (error) {
     return { error: error.message };
   }
@@ -90,22 +68,12 @@ export async function renameRoom(
     return { error: "Room name must be at least 2 characters." };
   }
 
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  // Verify caller is admin
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", authData.claims.sub)
-    .single();
-
-  if (!profile?.is_admin) {
+  const auth = await getAdminAuthForAction();
+  if (!auth) {
     return { error: "Only admins can rename rooms." };
   }
 
-  const { error } = await supabase
+  const { error } = await auth.supabase
     .from("rooms")
     .update({ name, description })
     .eq("id", roomId);

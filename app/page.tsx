@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/actions/auth";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
 import Link from "next/link";
+import { requireApprovedProfile } from "@/lib/auth/server";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,25 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-
-  // Proxy already redirects unauthenticated users to /login,
-  // but we double-check and fetch the profile in one query.
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  const userId = authData.claims.sub;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, is_admin, status, avatar_url")
-    .eq("id", userId)
-    .single();
-
-
-  if (!profile || profile.status === "pending") {
-    redirect("/pending");
-  }
+  const { supabase, profile } = await requireApprovedProfile();
 
   // Fetch rooms (will be empty for now)
   const { data: rooms } = await supabase

@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminProfile } from "@/lib/auth/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -12,19 +11,7 @@ async function approveUser(formData: FormData) {
   const userId = formData.get("userId") as string;
   if (!userId) return;
 
-  const supabase = await createClient();
-
-  // Verify admin (defence in depth — layout already guards this route)
-  const { data: authData } = await supabase.auth.getClaims();
-  if (!authData?.claims) redirect("/login");
-
-  const { data: caller } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", authData.claims.sub)
-    .single();
-
-  if (!caller?.is_admin) redirect("/");
+  const { supabase } = await requireAdminProfile();
 
   await supabase
     .from("profiles")
@@ -35,7 +22,7 @@ async function approveUser(formData: FormData) {
 }
 
 export default async function AdminUsersPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdminProfile();
 
   // Fetch all profiles — admin RLS policy allows this
   const { data: users } = await supabase
