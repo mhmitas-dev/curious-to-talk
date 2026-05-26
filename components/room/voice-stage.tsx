@@ -64,7 +64,7 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
             {activeAudio && (
               <button
                 onClick={() => setIsAudioMuted(!isAudioMuted)}
-                className="p-2 rounded-lg bg-card text-card-foreground hover:bg-accent transition-colors shadow-lg"
+                className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
                 aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
               >
                 {isAudioMuted ? <VolumeX className="h-5 w-5 text-destructive" /> : <Volume2 className="h-5 w-5" />}
@@ -72,7 +72,7 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
             )}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-lg bg-card text-card-foreground hover:bg-accent transition-colors shadow-lg"
+              className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}

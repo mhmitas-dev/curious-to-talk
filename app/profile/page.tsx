@@ -55,8 +55,9 @@ export default async function ProfilePage() {
               className="flex h-24 w-24 items-center justify-center rounded-full text-3xl font-bold text-primary-foreground select-none shadow-lg"
               style={{
                 background:
-                  "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-                boxShadow: "0 8px 32px -8px oklch(0.60 0.22 285 / 0.5)",
+                  "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
+                boxShadow:
+                  "0 8px 32px -8px color-mix(in oklch, var(--brand) 50%, transparent)",
               }}
             >
               {initials}

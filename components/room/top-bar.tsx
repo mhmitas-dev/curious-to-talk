@@ -14,6 +14,12 @@ interface TopBarProps {
   isActive: (tab: SidebarTab) => boolean;
 }
 
+const controllerButtonBase =
+  "flex h-10 w-10 items-center justify-center rounded-full border border-border/45 bg-[var(--button-dark)] shadow-sm transition-all hover:border-primary/35 hover:bg-[color-mix(in_oklch,var(--button-dark)_86%,var(--brand)_14%)] hover:text-foreground active:translate-y-px";
+
+const controllerButtonActive =
+  "border-primary/45 bg-[color-mix(in_oklch,var(--button-dark)_82%,var(--brand)_18%)] text-primary shadow-[0_0_0_1px_color-mix(in_oklch,var(--brand)_18%,transparent)]";
+
 export function TopBar({
   onLeave,
   sidebarOpen,
@@ -35,18 +41,11 @@ export function TopBar({
       <div className="flex items-center gap-2">
         <button
           onClick={toggleMic}
-          className={`flex h-10 w-10 items-center justify-center rounded-full transition-all shadow-sm ${
+          className={`${controllerButtonBase} ${
             isMuted
-              ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-              : "text-primary-foreground hover:opacity-90"
+              ? "text-destructive hover:border-destructive/35 hover:bg-destructive/15"
+              : "text-primary"
           }`}
-          style={
-            isMuted
-              ? undefined
-              : {
-                  backgroundColor: "var(--chart-4)",
-                }
-          }
           aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
         >
           {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -54,7 +53,7 @@ export function TopBar({
 
         <button
           onClick={onLeave}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-destructive shadow-sm transition-all hover:bg-destructive hover:text-primary-foreground"
+          className={`${controllerButtonBase} text-destructive hover:border-destructive/35 hover:bg-destructive/15 hover:text-destructive`}
           aria-label="Leave room"
         >
           <LogOut className="h-4 w-4" />
@@ -69,10 +68,10 @@ export function TopBar({
         />
         <button
           onClick={onToggleSidebar}
-          className={`flex h-10 w-10 items-center justify-center rounded-full transition-all shadow-sm ${
+          className={`${controllerButtonBase} ${
             sidebarOpen
-              ? "bg-primary text-primary-foreground"
-              : "bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+              ? controllerButtonActive
+              : "text-muted-foreground"
           }`}
           aria-label="Toggle Sidebar"
         >
@@ -95,10 +94,10 @@ function ChatButtonInBar({
   return (
     <button
       onClick={onOpen}
-      className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-all shadow-sm ${
+      className={`relative ${controllerButtonBase} ${
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+          ? controllerButtonActive
+          : "text-muted-foreground"
       }`}
       aria-label="Chat"
     >

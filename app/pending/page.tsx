@@ -26,7 +26,7 @@ export default async function PendingPage() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 50%, oklch(0.35 0.18 285 / 0.12) 0%, transparent 70%)",
+            "radial-gradient(ellipse 70% 50% at 50% 50%, color-mix(in oklch, var(--brand) 14%, transparent) 0%, transparent 70%)",
         }}
       />
 
@@ -36,8 +36,8 @@ export default async function PendingPage() {
           className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl text-4xl"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.2), oklch(0.45 0.20 300 / 0.2))",
-            border: "1px solid oklch(0.60 0.22 285 / 0.3)",
+              "linear-gradient(135deg, color-mix(in oklch, var(--brand) 22%, transparent), color-mix(in oklch, var(--brand-deep) 18%, transparent))",
+            border: "1px solid color-mix(in oklch, var(--brand) 35%, transparent)",
           }}
         >
           ⏳

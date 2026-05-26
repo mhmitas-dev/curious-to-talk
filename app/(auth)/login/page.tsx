@@ -15,7 +15,7 @@ export default function LoginPage() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.35 0.18 285 / 0.18) 0%, transparent 70%)",
+            "radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in oklch, var(--brand) 18%, transparent) 0%, transparent 70%)",
         }}
       />
 
@@ -26,8 +26,9 @@ export default function LoginPage() {
             className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
-              boxShadow: "0 0 32px oklch(0.55 0.22 285 / 0.4)",
+                "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
+              boxShadow:
+                "0 0 32px color-mix(in oklch, var(--brand) 40%, transparent)",
             }}
           >
             🎙️
@@ -47,7 +48,7 @@ export default function LoginPage() {
           className="rounded-2xl border border-border bg-card p-6 shadow-2xl"
           style={{
             boxShadow:
-              "0 0 0 1px oklch(0.22 0.01 265), 0 24px 48px oklch(0 0 0 / 0.5)",
+              "0 0 0 1px color-mix(in oklch, var(--button-dark) 55%, transparent), 0 24px 48px oklch(0 0 0 / 0.45)",
           }}
         >
           <form action={action} className="flex flex-col gap-4">
@@ -65,7 +66,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isPending}
-              className="h-11 w-full bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 active:bg-gray-100 font-semibold shadow-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-3 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-50/95"
+              className="h-11 w-full border border-border bg-[var(--button-light)] text-[var(--button-dark)] hover:bg-[color-mix(in_oklch,var(--button-light)_92%,var(--brand)_8%)] active:bg-[color-mix(in_oklch,var(--button-light)_86%,var(--brand)_14%)] font-semibold shadow-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-3 dark:bg-[var(--button-light)] dark:text-[var(--button-dark)] dark:hover:bg-[color-mix(in_oklch,var(--button-light)_92%,var(--brand)_8%)]"
             >
               {/* Google G Vector Icon */}
               <svg
