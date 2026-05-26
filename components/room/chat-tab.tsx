@@ -163,7 +163,7 @@ function ChatBubble({
   const timestamp = formatTime(msg.timestamp);
 
   return (
-    <div className={`group flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
+    <div className="group flex gap-2">
       <Avatar size="sm" className="mt-1 h-8 w-8 bg-muted shadow-sm">
         <AvatarImage src={avatarUrl} alt={senderName} />
         <AvatarFallback className="text-[10px] font-semibold">
@@ -171,8 +171,8 @@ function ChatBubble({
         </AvatarFallback>
       </Avatar>
 
-      <div className={`flex min-w-0 max-w-[86%] flex-col gap-1.5 ${isOwn ? "items-end" : "items-start"}`}>
-        <div className={`flex max-w-full items-baseline gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
+      <div className="flex min-w-0 max-w-[86%] flex-col items-start gap-1.5">
+        <div className="flex max-w-full items-baseline gap-2">
           <span className="truncate text-[12px] font-semibold leading-none text-foreground">
             {isOwn ? "You" : senderName}
           </span>
@@ -184,14 +184,14 @@ function ChatBubble({
         <div
           className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
             isOwn
-              ? "bg-primary text-primary-foreground"
-              : "bg-card text-secondary-foreground"
+              ? "bg-[color-mix(in_oklch,var(--card)_82%,var(--brand)_18%)] text-foreground"
+              : "bg-card text-foreground"
           }`}
         >
           {msg.message}
         </div>
 
-        <div className={`flex items-center gap-1 ${isOwn ? "flex-row-reverse" : ""}`}>
+        <div className="flex items-center gap-1">
           <MessagePlaceholderButton label="React to message">
             <Heart className="h-3.5 w-3.5" />
           </MessagePlaceholderButton>
