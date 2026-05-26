@@ -36,13 +36,15 @@ export function AdminRoomsList({ rooms }: AdminRoomsListProps) {
   // Clear editing/deleting states on success
   useEffect(() => {
     if (!isRenamePending && !renameState?.error) {
-      setEditingRoomId(null);
+      const timer = setTimeout(() => setEditingRoomId(null), 0);
+      return () => clearTimeout(timer);
     }
   }, [isRenamePending, renameState]);
 
   useEffect(() => {
     if (!isDeletePending && !deleteState?.error) {
-      setDeletingRoomId(null);
+      const timer = setTimeout(() => setDeletingRoomId(null), 0);
+      return () => clearTimeout(timer);
     }
   }, [isDeletePending, deleteState]);
 
@@ -54,8 +56,8 @@ export function AdminRoomsList({ rooms }: AdminRoomsListProps) {
             className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.15), oklch(0.45 0.20 300 / 0.15))",
-              border: "1px solid oklch(0.60 0.22 285 / 0.2)",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 18%, transparent), color-mix(in oklch, var(--brand-deep) 14%, transparent))",
+              border: "1px solid color-mix(in oklch, var(--brand) 25%, transparent)",
             }}
           >
             🔇
@@ -149,7 +151,7 @@ export function AdminRoomsList({ rooms }: AdminRoomsListProps) {
                         style={{
                           background: isRenamePending
                             ? undefined
-                            : "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))",
+                            : "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
                         }}
                       >
                         {isRenamePending ? "Saving…" : "Save changes"}
@@ -163,7 +165,7 @@ export function AdminRoomsList({ rooms }: AdminRoomsListProps) {
                     
                     <div className="flex flex-col gap-1.5 py-1 text-center sm:text-left">
                       <p className="text-sm font-semibold text-foreground">
-                        Delete Room "{room.name}"?
+                        Delete Room &quot;{room.name}&quot;?
                       </p>
                       <p className="text-xs text-muted-foreground">
                         This action cannot be undone. Active voice connections will disconnect and the room link will expire.
@@ -205,8 +207,8 @@ export function AdminRoomsList({ rooms }: AdminRoomsListProps) {
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl select-none"
                       style={{
                         background:
-                          "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.15), oklch(0.45 0.20 300 / 0.15))",
-                        border: "1px solid oklch(0.60 0.22 285 / 0.2)",
+                          "linear-gradient(135deg, color-mix(in oklch, var(--brand) 18%, transparent), color-mix(in oklch, var(--brand-deep) 14%, transparent))",
+                        border: "1px solid color-mix(in oklch, var(--brand) 25%, transparent)",
                       }}
                     >
                       🔊

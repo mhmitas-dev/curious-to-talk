@@ -54,17 +54,17 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
 
   if (activeShare && activeShare.publication) {
     return (
-      <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-sidebar p-2 md:p-4">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-black p-0 md:p-4">
         <div
           ref={containerRef}
-          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-sidebar"
+          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black"
         >
           <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
           <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
             {activeAudio && (
               <button
                 onClick={() => setIsAudioMuted(!isAudioMuted)}
-                className="p-2 rounded-lg bg-card text-card-foreground hover:bg-accent transition-colors shadow-lg"
+                className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
                 aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
               >
                 {isAudioMuted ? <VolumeX className="h-5 w-5 text-destructive" /> : <Volume2 className="h-5 w-5" />}
@@ -72,7 +72,7 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
             )}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-lg bg-card text-card-foreground hover:bg-accent transition-colors shadow-lg"
+              className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}

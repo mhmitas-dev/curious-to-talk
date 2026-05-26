@@ -114,7 +114,7 @@ export default async function AdminUsersPage() {
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
                       style={{
                         background:
-                          "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.5), oklch(0.45 0.20 300 / 0.5))",
+                          "linear-gradient(135deg, color-mix(in oklch, var(--brand-bright) 55%, transparent), color-mix(in oklch, var(--brand-deep) 55%, transparent))",
                       }}
                     >
                       {user.display_name.slice(0, 2).toUpperCase()}
@@ -142,7 +142,7 @@ export default async function AdminUsersPage() {
                       className="h-8 rounded-lg px-3 text-xs font-semibold"
                       style={{
                         background:
-                          "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))",
+                          "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
                       }}
                     >
                       Approve
@@ -178,7 +178,7 @@ export default async function AdminUsersPage() {
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary-foreground select-none"
                     style={{
                       background:
-                        "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                        "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
                     }}
                   >
                     {user.display_name.slice(0, 2).toUpperCase()}

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
+import { RoomsPresenceList } from "@/components/rooms-presence-list";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -16,19 +17,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UsersRound } from "lucide-react";
-
-interface Room {
-  id: string;
-  name: string;
-  description: string | null;
-  participantCount: number;
-}
 
 const voiceIconStyle = {
   background:
-    "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.2), oklch(0.45 0.20 300 / 0.2))",
-  border: "1px solid oklch(0.60 0.22 285 / 0.3)",
+    "linear-gradient(135deg, color-mix(in oklch, var(--brand) 20%, transparent), color-mix(in oklch, var(--brand-deep) 14%, transparent))",
 };
 
 function getInitials(name: string) {
@@ -58,13 +50,13 @@ export default async function HomePage() {
     <div className="flex min-h-screen flex-col">
       <HomeHeader profile={profile} />
 
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-5">
         <SectionHeading>Rooms</SectionHeading>
 
         {profile.is_admin && <CreateRoomForm />}
 
         {roomsWithPresence.length > 0 ? (
-          <RoomsList rooms={roomsWithPresence} />
+          <RoomsPresenceList rooms={roomsWithPresence} />
         ) : (
           <EmptyRoomsState isAdmin={profile.is_admin} />
         )}
@@ -84,7 +76,7 @@ async function getRoomParticipantCounts(roomIds: string[]) {
 
 function HomeHeader({ profile }: { profile: AuthProfile }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-10 bg-card/80 shadow-sm backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg" aria-hidden>
@@ -109,7 +101,7 @@ function AdminLink() {
     <Link href="/admin/users">
       <Badge
         variant="outline"
-        className="border-primary/40 text-primary text-xs cursor-pointer hover:bg-primary/10 transition-colors"
+        className="border-transparent bg-[var(--button-dark)] text-primary text-xs cursor-pointer hover:bg-[color-mix(in_oklch,var(--button-dark)_86%,var(--brand)_14%)] transition-colors"
       >
         Admin
       </Badge>
@@ -131,7 +123,7 @@ function ProfileMenu({ profile }: { profile: AuthProfile }) {
             className="text-xs font-semibold text-primary-foreground"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.55 0.22 285), oklch(0.45 0.20 300))",
+                "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
             }}
           >
             {initials}
@@ -163,66 +155,10 @@ function ProfileMenu({ profile }: { profile: AuthProfile }) {
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center justify-between">
-      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {children}
       </h2>
     </div>
-  );
-}
-
-function RoomsList({ rooms }: { rooms: Room[] }) {
-  return (
-    <ul className="flex flex-col gap-3">
-      {rooms.map((room) => (
-        <li key={room.id}>
-          <RoomListItem room={room} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function RoomListItem({ room }: { room: Room }) {
-  const hasParticipants = room.participantCount > 0;
-  const participantLabel =
-    room.participantCount > 99 ? "99+ here" : `${room.participantCount} here`;
-
-  return (
-    <Link
-      href={`/rooms/${room.id}`}
-      className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-accent"
-    >
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-        style={voiceIconStyle}
-      >
-        🔊
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground truncate">{room.name}</p>
-        {room.description && (
-          <p className="text-sm text-muted-foreground truncate mt-0.5">
-            {room.description}
-          </p>
-        )}
-      </div>
-      <div
-        className={`flex min-w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-          hasParticipants
-            ? "bg-primary/10 text-primary"
-            : "bg-muted text-muted-foreground"
-        }`}
-        aria-label={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
-        title={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
-      >
-        <UsersRound className="h-3.5 w-3.5" />
-        <span>{hasParticipants ? participantLabel : "Empty"}</span>
-      </div>
-    </Link>
   );
 }
 
@@ -234,8 +170,7 @@ function EmptyRoomsState({ isAdmin }: { isAdmin: boolean }) {
         style={{
           ...voiceIconStyle,
           background:
-            "linear-gradient(135deg, oklch(0.55 0.22 285 / 0.15), oklch(0.45 0.20 300 / 0.15))",
-          border: "1px solid oklch(0.60 0.22 285 / 0.2)",
+            "linear-gradient(135deg, color-mix(in oklch, var(--brand) 18%, transparent), color-mix(in oklch, var(--brand-deep) 12%, transparent))",
         }}
       >
         🔇

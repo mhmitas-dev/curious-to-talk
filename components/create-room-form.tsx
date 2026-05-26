@@ -5,6 +5,7 @@ import { createRoom } from "@/app/actions/rooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
 
 export function CreateRoomForm() {
   const [open, setOpen] = useState(false);
@@ -31,13 +32,13 @@ export function CreateRoomForm() {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-transparent py-3 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--button-dark)] py-3 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-[color-mix(in_oklch,var(--button-dark)_86%,var(--brand)_14%)] hover:text-foreground"
         >
-          <span className="text-base leading-none">+</span>
+          <Plus className="h-4 w-4" />
           New room
         </button>
       ) : (
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="rounded-xl bg-card/65 p-4 shadow-sm">
           <p className="mb-4 text-sm font-medium text-foreground">
             Create a new room
           </p>
@@ -83,7 +84,7 @@ export function CreateRoomForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="flex-1 h-9 text-xs"
+                className="flex-1 h-9 border-transparent bg-[var(--button-dark)] text-xs hover:bg-accent"
                 onClick={() => setOpen(false)}
                 disabled={isPending}
               >
@@ -97,7 +98,7 @@ export function CreateRoomForm() {
                 style={{
                   background: isPending
                     ? undefined
-                    : "linear-gradient(135deg, oklch(0.60 0.22 285), oklch(0.50 0.22 300))",
+                    : "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
                 }}
               >
                 {isPending ? "Creating…" : "Create room"}
