@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
+import { RoomsPresenceList } from "@/components/rooms-presence-list";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -16,14 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UsersRound } from "lucide-react";
-
-interface Room {
-  id: string;
-  name: string;
-  description: string | null;
-  participantCount: number;
-}
 
 const voiceIconStyle = {
   background:
@@ -63,7 +56,7 @@ export default async function HomePage() {
         {profile.is_admin && <CreateRoomForm />}
 
         {roomsWithPresence.length > 0 ? (
-          <RoomsList rooms={roomsWithPresence} />
+          <RoomsPresenceList rooms={roomsWithPresence} />
         ) : (
           <EmptyRoomsState isAdmin={profile.is_admin} />
         )}
@@ -166,62 +159,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
         {children}
       </h2>
     </div>
-  );
-}
-
-function RoomsList({ rooms }: { rooms: Room[] }) {
-  return (
-    <ul className="flex flex-col gap-3">
-      {rooms.map((room) => (
-        <li key={room.id}>
-          <RoomListItem room={room} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function RoomListItem({ room }: { room: Room }) {
-  const hasParticipants = room.participantCount > 0;
-  const participantLabel =
-    room.participantCount > 99 ? "99+ here" : `${room.participantCount} here`;
-
-  return (
-    <Link
-      href={`/rooms/${room.id}`}
-      className="flex items-center gap-4 rounded-xl bg-card/55 p-4 shadow-sm transition-colors hover:bg-card"
-    >
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl"
-        style={voiceIconStyle}
-      >
-        🔊
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground truncate">{room.name}</p>
-        {room.description && (
-          <p className="text-sm text-muted-foreground truncate mt-0.5">
-            {room.description}
-          </p>
-        )}
-      </div>
-      <div
-        className={`flex min-w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-          hasParticipants
-            ? "bg-primary/15 text-primary"
-            : "bg-[var(--button-dark)] text-muted-foreground"
-        }`}
-        aria-label={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
-        title={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
-      >
-        <UsersRound className="h-3.5 w-3.5" />
-        <span>{hasParticipants ? participantLabel : "Empty"}</span>
-      </div>
-    </Link>
   );
 }
 
