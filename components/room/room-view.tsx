@@ -32,6 +32,7 @@ import { SettingsTab } from "./settings-tab";
 import { TopBar } from "./top-bar";
 import { useLocalStorage } from "./use-local-storage";
 import { useScreenShareState } from "./use-screen-share-state";
+import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { VoiceStage } from "./voice-stage";
 
 interface Props {
@@ -117,6 +118,7 @@ function RoomChrome({
   });
   const chat = useChat();
   const router = useRouter();
+  const screenWakeLock = useScreenWakeLock(hasEnteredRoom);
   const chatIsActive = sidebarOpen && sidebarTab === "chat";
   const unreadChatCount = chatIsActive
     ? 0
@@ -272,6 +274,10 @@ function RoomChrome({
               setScreenFps={setScreenFps}
               bufferTime={bufferTime}
               setBufferTime={setBufferTime}
+              wakeLockStatus={screenWakeLock.status}
+              wakeLockError={screenWakeLock.error}
+              wakeLockEnabled={screenWakeLock.isEnabled}
+              onToggleWakeLock={screenWakeLock.toggle}
             />
           )}
         </div>
