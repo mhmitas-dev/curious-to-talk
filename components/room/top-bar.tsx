@@ -41,11 +41,10 @@ export function TopBar({
       <div className="flex items-center gap-2">
         <button
           onClick={toggleMic}
-          className={`${controllerButtonBase} ${
-            isMuted
+          className={`${controllerButtonBase} ${isMuted
               ? "text-destructive hover:border-destructive/35 hover:bg-destructive/15"
-              : "text-primary"
-          }`}
+              : "text-white bg-green-600"
+            }`}
           aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
         >
           {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -68,11 +67,10 @@ export function TopBar({
         />
         <button
           onClick={onToggleSidebar}
-          className={`${controllerButtonBase} ${
-            sidebarOpen
+          className={`${controllerButtonBase} ${sidebarOpen
               ? controllerButtonActive
               : "text-muted-foreground"
-          }`}
+            }`}
           aria-label="Toggle Sidebar"
         >
           <Menu className="h-4 w-4" />
@@ -94,11 +92,10 @@ function ChatButtonInBar({
   return (
     <button
       onClick={onOpen}
-      className={`relative ${controllerButtonBase} ${
-        isActive
+      className={`relative ${controllerButtonBase} ${isActive
           ? controllerButtonActive
           : "text-muted-foreground"
-      }`}
+        }`}
       aria-label="Chat"
     >
       <MessageSquare className="h-4 w-4" />

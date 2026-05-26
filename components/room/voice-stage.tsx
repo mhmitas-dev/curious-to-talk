@@ -54,10 +54,10 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
 
   if (activeShare && activeShare.publication) {
     return (
-      <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-sidebar p-2 md:p-4">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-black p-0 md:p-4">
         <div
           ref={containerRef}
-          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-sidebar"
+          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black"
         >
           <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
           <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
