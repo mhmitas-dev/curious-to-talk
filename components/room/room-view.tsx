@@ -2,8 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LiveKitRoom, RoomAudioRenderer, useChat } from "@livekit/components-react";
-import { LayoutGrid, MessageSquare, Settings, UsersRound, X } from "lucide-react";
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useChat,
+  useConnectionState,
+} from "@livekit/components-react";
+import { ConnectionState } from "livekit-client";
+import {
+  LayoutGrid,
+  LoaderCircle,
+  LogOut,
+  MessageSquare,
+  Settings,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { AppsTab } from "./apps-tab";
 import { ChatTab } from "./chat-tab";
 import { ParticipantPanel } from "./participant-panel";
@@ -18,6 +32,7 @@ import { SettingsTab } from "./settings-tab";
 import { TopBar } from "./top-bar";
 import { useLocalStorage } from "./use-local-storage";
 import { useScreenShareState } from "./use-screen-share-state";
+import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { VoiceStage } from "./voice-stage";
 
 interface Props {
@@ -28,6 +43,8 @@ interface Props {
 
 export function RoomView({ token, livekitUrl, userId }: Props) {
   const router = useRouter();
+  const [hasEnteredRoom, setHasEnteredRoom] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
@@ -53,16 +70,36 @@ export function RoomView({ token, livekitUrl, userId }: Props) {
             noiseSuppression: true,
           },
         }}
+        onConnected={() => {
+          setJoinError(null);
+          setHasEnteredRoom(true);
+        }}
+        onError={(error) => {
+          setJoinError(error.message || "Unable to join this room.");
+        }}
         onDisconnected={() => router.push("/")}
         style={{ display: "contents" }}
       >
-        <RoomChrome userId={userId} />
+        <RoomChrome
+          userId={userId}
+          hasEnteredRoom={hasEnteredRoom}
+          joinError={joinError}
+        />
       </LiveKitRoom>
     </div>
   );
 }
 
-function RoomChrome({ userId }: { userId: string }) {
+function RoomChrome({
+  userId,
+  hasEnteredRoom,
+  joinError,
+}: {
+  userId: string;
+  hasEnteredRoom: boolean;
+  joinError: string | null;
+}) {
+  const connectionState = useConnectionState();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("chat");
   const [participantsExpanded, setParticipantsExpanded] = useState(false);
@@ -81,6 +118,7 @@ function RoomChrome({ userId }: { userId: string }) {
   });
   const chat = useChat();
   const router = useRouter();
+  const screenWakeLock = useScreenWakeLock(hasEnteredRoom);
   const chatIsActive = sidebarOpen && sidebarTab === "chat";
   const unreadChatCount = chatIsActive
     ? 0
@@ -115,6 +153,19 @@ function RoomChrome({ userId }: { userId: string }) {
       setSidebarOpen(true);
     }
   };
+
+  if (!hasEnteredRoom) {
+    return (
+      <>
+        <RoomAudioRenderer />
+        <JoiningRoomStage
+          connectionState={connectionState}
+          error={joinError}
+          onLeave={() => router.push("/")}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -223,10 +274,64 @@ function RoomChrome({ userId }: { userId: string }) {
               setScreenFps={setScreenFps}
               bufferTime={bufferTime}
               setBufferTime={setBufferTime}
+              wakeLockStatus={screenWakeLock.status}
+              wakeLockError={screenWakeLock.error}
+              wakeLockEnabled={screenWakeLock.isEnabled}
+              onToggleWakeLock={screenWakeLock.toggle}
             />
           )}
         </div>
       </aside>
     </>
+  );
+}
+
+function JoiningRoomStage({
+  connectionState,
+  error,
+  onLeave,
+}: {
+  connectionState: ConnectionState;
+  error: string | null;
+  onLeave: () => void;
+}) {
+  const statusText = error
+    ? "Could not join room"
+    : connectionState === ConnectionState.Reconnecting ||
+      connectionState === ConnectionState.SignalReconnecting
+    ? "Reconnecting"
+    : "Joining room";
+
+  return (
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex h-14 shrink-0 items-center justify-end bg-card px-4 shadow-sm">
+        <button
+          onClick={onLeave}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-destructive shadow-sm transition-all hover:bg-destructive hover:text-primary-foreground"
+          aria-label="Leave room"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center bg-sidebar px-6 text-center">
+        <div className="relative flex h-20 w-20 items-center justify-center">
+          <span className="absolute inset-0 rounded-full bg-primary/10" />
+          <span className="absolute inset-2 rounded-full bg-primary/10" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-card shadow-sm">
+            <LoaderCircle
+              className={`h-6 w-6 text-primary ${error ? "" : "animate-spin"}`}
+            />
+          </div>
+        </div>
+
+        <p className="mt-5 text-sm font-semibold text-foreground">
+          {statusText}
+        </p>
+        <p className="mt-1 max-w-60 text-xs leading-relaxed text-muted-foreground">
+          {error ?? "Setting up voice, chat, and everyone already here."}
+        </p>
+      </div>
+    </div>
   );
 }
