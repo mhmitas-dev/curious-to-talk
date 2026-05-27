@@ -1,1 +1,21 @@
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <color id="light-shade" value="#9aa2f9" />
+    <color id="main-shade" value="#5865f2" />
+    <color id="dark-shade" value="#3b47c4" />
+  </defs>
+
+  <g id="outer-ring">
+    <path d="M 256,0 A 256,256 0 1,0 512,256 A 256,256 0 0,0 256,0 Z" fill="#3b47c4" />
+    
+    <path d="M 450,130 C 520,240 480,390 370,460 C 260,530 110,490 40,380 C -10,300 -10,190 50,120 C 100,60 180,20 256,20 C 330,20 400,60 450,130 Z" fill="#5865f2" />
+    
+    <path d="M 256,0 C 360,0 452,60 494,150 C 470,100 410,50 340,30 C 210,-10 80,50 30,160 C 50,100 100,50 170,20 C 198,8 227,0 256,0 Z" fill="#7581f5" opacity="0.6"/>
+  </g>
+
+  <g id="inner-ring">
+    <path d="M 256,86 C 350,86 426,162 426,256 C 426,350 350,426 256,426 C 162,426 86,350 86,256 C 86,162 162,86 256,86 Z" fill="#9aa2f9" />
+  </g>
+
+  <circle cx="256" cy="256" r="84" fill="#ffffff" />
+</svg>

@@ -61,6 +61,8 @@ export default async function HomePage() {
           <EmptyRoomsState isAdmin={profile.is_admin} />
         )}
       </main>
+
+      <HomePhilosophy />
     </div>
   );
 }
@@ -159,6 +161,19 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
         {children}
       </h2>
     </div>
+  );
+}
+
+function HomePhilosophy() {
+  return (
+    <footer className="mx-auto w-full max-w-lg px-4 pb-7 pt-3 text-center">
+      <p className="text-sm font-semibold tracking-tight text-foreground">
+        Curious to Talk
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        &ldquo;Quiet, simple, lightweight.&rdquo;
+      </p>
+    </footer>
   );
 }
 

@@ -107,19 +107,9 @@ export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props)
         <div ref={bottomRef} />
       </div>
 
-      <div className="shrink-0 border-t border-border bg-sidebar shadow-lg focus-within:border-primary">
-        <div className="overflow-hidden bg-background shadow-md">
-          <textarea
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Message..."
-            rows={2}
-            className="min-h-[58px] max-h-24 w-full resize-none rounded-t-xl bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
-          />
-
-          <div className="flex h-9 items-stretch justify-between bg-card">
+      <div className="shrink-0 border-t border-border bg-card p-2 shadow-lg">
+        <div className="bg-card">
+          <div className="mb-2 flex h-9 items-stretch justify-between bg-card">
             <div className="flex items-stretch">
               <ComposerPlaceholderButton label="Add image">
                 <ImageIcon className="h-4 w-4" />
@@ -143,6 +133,18 @@ export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props)
             >
               <Send className="h-4 w-4 ml-0.5" />
             </button>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-border bg-sidebar transition-colors focus-within:border-primary">
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message..."
+              rows={2}
+              className="min-h-[58px] max-h-24 w-full resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
+            />
           </div>
         </div>
       </div>

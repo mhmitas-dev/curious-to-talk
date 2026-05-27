@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { UsersRound } from "lucide-react";
+import { Users, UsersRound } from "lucide-react";
 
 const PRESENCE_POLL_INTERVAL_MS = 7_500;
 
@@ -147,19 +147,16 @@ function RoomListItem({ room }: { room: RoomWithPresence }) {
         )}
       </div>
       <div
-        className={`flex min-w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-          hasParticipants
+        className={`flex min-w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${hasParticipants
             ? "bg-primary/15 text-primary"
             : "bg-[var(--button-dark)] text-muted-foreground"
-        }`}
-        aria-label={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
-        title={`${room.participantCount} participant${
-          room.participantCount === 1 ? "" : "s"
-        } in ${room.name}`}
+          }`}
+        aria-label={`${room.participantCount} participant${room.participantCount === 1 ? "" : "s"
+          } in ${room.name}`}
+        title={`${room.participantCount} participant${room.participantCount === 1 ? "" : "s"
+          } in ${room.name}`}
       >
-        <UsersRound className="h-3.5 w-3.5" />
+        <Users className="h-3.5 w-3.5" />
         <span>{hasParticipants ? participantLabel : "Empty"}</span>
       </div>
     </Link>
