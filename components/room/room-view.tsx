@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   LiveKitRoom,
@@ -15,7 +15,7 @@ import {
   LogOut,
   MessageSquare,
   Settings,
-  UsersRound,
+  Users,
   X,
 } from "lucide-react";
 import { AppsTab } from "./apps-tab";
@@ -29,7 +29,9 @@ import type {
   SidebarTab,
 } from "./room-types";
 import { SettingsTab } from "./settings-tab";
+import { SocialTab } from "./social-tab";
 import { TopBar } from "./top-bar";
+import { useDirectMessageState } from "./use-direct-message-state";
 import { useLocalStorage } from "./use-local-storage";
 import { useScreenShareState } from "./use-screen-share-state";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -119,6 +121,10 @@ function RoomChrome({
   const chat = useChat();
   const router = useRouter();
   const screenWakeLock = useScreenWakeLock(hasEnteredRoom);
+  const directMessages = useDirectMessageState({
+    enabled: hasEnteredRoom,
+    userId,
+  });
   const chatIsActive = sidebarOpen && sidebarTab === "chat";
   const unreadChatCount = chatIsActive
     ? 0
@@ -153,6 +159,17 @@ function RoomChrome({
       setSidebarOpen(true);
     }
   };
+
+  const openDirectMessageFromParticipant = useCallback(
+    async (participantId: string) => {
+      if (participantId === userId) return;
+
+      setSidebarTab("social");
+      setSidebarOpen(true);
+      await directMessages.openConversationWithUser(participantId);
+    },
+    [directMessages, userId]
+  );
 
   if (!hasEnteredRoom) {
     return (
@@ -190,6 +207,7 @@ function RoomChrome({
         <VoiceStage bufferTime={bufferTime} />
         <ParticipantPanel
           expanded={participantsExpanded}
+          onMessageParticipant={openDirectMessageFromParticipant}
           onToggle={() => setParticipantsExpanded((prev) => !prev)}
         />
       </div>
@@ -215,7 +233,7 @@ function RoomChrome({
                   : tab === "apps"
                     ? LayoutGrid
                     : tab === "social"
-                      ? UsersRound
+                      ? Users
                       : Settings;
               return (
                 <button
@@ -229,6 +247,11 @@ function RoomChrome({
                   aria-label={tab}
                 >
                   <Icon className="h-5 w-5" />
+                  {tab === "social" && directMessages.unreadTotal > 0 && (
+                    <span className="absolute right-4 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                      {directMessages.unreadTotal > 9 ? "9+" : directMessages.unreadTotal}
+                    </span>
+                  )}
                   {sidebarTab === tab && (
                     <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
                   )}
@@ -263,7 +286,12 @@ function RoomChrome({
               send={chat.send}
             />
           )}
-          {sidebarTab === "social" && <div className="h-full bg-sidebar" />}
+          {sidebarTab === "social" && (
+            <SocialTab
+              directMessages={directMessages}
+              localUserId={userId}
+            />
+          )}
           {sidebarTab === "settings" && (
             <SettingsTab
               screenShareMode={screenShareMode}
@@ -299,12 +327,12 @@ function JoiningRoomStage({
     ? "Could not join room"
     : connectionState === ConnectionState.Reconnecting ||
       connectionState === ConnectionState.SignalReconnecting
-    ? "Reconnecting"
-    : "Joining room";
+      ? "Reconnecting"
+      : "Joining room";
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex h-14 shrink-0 items-center justify-end bg-card px-4 shadow-sm">
+      <div className="flex h-16 shrink-0 items-center justify-end bg-card px-4 shadow-sm">
         <button
           onClick={onLeave}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-destructive shadow-sm transition-all hover:bg-destructive hover:text-primary-foreground"

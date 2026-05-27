@@ -107,19 +107,9 @@ export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props)
         <div ref={bottomRef} />
       </div>
 
-      <div className="shrink-0 border-t border-border bg-sidebar shadow-lg focus-within:border-primary">
-        <div className="overflow-hidden bg-background shadow-md">
-          <textarea
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Message..."
-            rows={2}
-            className="min-h-[58px] max-h-24 w-full resize-none rounded-t-xl bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
-          />
-
-          <div className="flex h-9 items-stretch justify-between bg-card">
+      <div className="shrink-0 border-t border-border bg-card px-2.5 pb-2.5 pt-2">
+        <div>
+          <div className="mb-1 flex h-5 items-center bg-card">
             <div className="flex items-stretch">
               <ComposerPlaceholderButton label="Add image">
                 <ImageIcon className="h-4 w-4" />
@@ -134,11 +124,22 @@ export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props)
                 <Paperclip className="h-4 w-4" />
               </ComposerPlaceholderButton>
             </div>
+          </div>
 
+          <div className="flex overflow-hidden rounded-[4px] border border-primary/70 bg-sidebar transition-colors focus-within:border-primary">
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message..."
+              rows={2}
+              className="min-h-[64px] max-h-28 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
+            />
             <button
               onClick={handleSend}
               disabled={!draft.trim() || isSending}
-              className="mr-0 flex h-9 w-12 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-all active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex w-9 shrink-0 items-center justify-center border-l border-primary/40 bg-primary text-primary-foreground transition-colors active:bg-primary/80 disabled:cursor-not-allowed disabled:bg-card disabled:text-muted-foreground disabled:opacity-70"
               aria-label="Send message"
             >
               <Send className="h-4 w-4 ml-0.5" />
@@ -182,11 +183,10 @@ function ChatBubble({
         </div>
 
         <div
-          className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
-            isOwn
+          className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed break-words shadow-sm ${isOwn
               ? "bg-[color-mix(in_oklch,var(--card)_82%,var(--brand)_18%)] text-foreground"
               : "bg-card text-foreground"
-          }`}
+            }`}
         >
           {msg.message}
         </div>
@@ -215,7 +215,7 @@ function ComposerPlaceholderButton({
     <button
       type="button"
       disabled
-      className="flex h-9 w-9 items-center justify-center text-muted-foreground opacity-60 cursor-not-allowed"
+      className="flex h-5 w-9 cursor-not-allowed items-center justify-center text-muted-foreground opacity-90"
       aria-label={`${label} (coming soon)`}
       title={`${label} (coming soon)`}
     >
