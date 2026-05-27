@@ -7,7 +7,16 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ArrowLeft, LoaderCircle, MessageCircle, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Image as ImageIcon,
+  ImagePlay,
+  LoaderCircle,
+  MessageCircle,
+  Paperclip,
+  Send,
+  Smile,
+} from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -185,23 +194,6 @@ function DirectMessageThread({
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex h-16 shrink-0 flex-col justify-center border-b border-border bg-sidebar px-3">
         <div className="flex items-center gap-2">
-          <Avatar className="h-9 w-9 bg-muted shadow-sm">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={title} />}
-            <AvatarFallback className="text-xs font-semibold">
-              {getConversationInitials(conversation)}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {title}
-            </p>
-            <p className="text-xs text-muted-foreground">Conversation</p>
-          </div>
-
-          {directMessages.isLoadingMessages && (
-            <LoaderCircle className="h-4 w-4 animate-spin text-primary" />
-          )}
           <button
             type="button"
             onClick={directMessages.closeConversation}
@@ -210,6 +202,24 @@ function DirectMessageThread({
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
+
+          {directMessages.isLoadingMessages && (
+            <LoaderCircle className="h-4 w-4 animate-spin text-primary" />
+          )}
+
+          <div className="min-w-0 flex-1 text-right">
+            <p className="truncate text-sm font-semibold text-foreground">
+              {title}
+            </p>
+            <p className="text-xs text-muted-foreground">Conversation</p>
+          </div>
+
+          <Avatar className="h-9 w-9 bg-muted shadow-sm">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={title} />}
+            <AvatarFallback className="text-xs font-semibold">
+              {getConversationInitials(conversation)}
+            </AvatarFallback>
+          </Avatar>
         </div>
         {directMessages.error && (
           <p className="mx-2 mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -239,14 +249,38 @@ function DirectMessageThread({
         <div ref={bottomRef} />
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card p-2 shadow-lg">
-        <div className="bg-card">
-          <div className="mb-2 flex h-9 items-stretch justify-end bg-card">
+      <div className="shrink-0 border-t border-border bg-card px-2.5 pb-2.5 pt-2">
+        <div>
+          <div className="mb-1 flex h-5 items-center bg-card">
+            <SocialComposerPlaceholderButton label="Add image">
+              <ImageIcon className="h-4 w-4" />
+            </SocialComposerPlaceholderButton>
+            <SocialComposerPlaceholderButton label="Add GIF">
+              <ImagePlay className="h-4 w-4" />
+            </SocialComposerPlaceholderButton>
+            <SocialComposerPlaceholderButton label="Add emoji">
+              <Smile className="h-4 w-4" />
+            </SocialComposerPlaceholderButton>
+            <SocialComposerPlaceholderButton label="Attach file">
+              <Paperclip className="h-4 w-4" />
+            </SocialComposerPlaceholderButton>
+          </div>
+
+          <div className="flex overflow-hidden rounded-[4px] border border-primary/70 bg-sidebar transition-colors focus-within:border-primary">
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message..."
+              rows={2}
+              className="min-h-[64px] max-h-28 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
+            />
             <button
               type="button"
               onClick={() => void handleSend()}
               disabled={!draft.trim() || directMessages.isSending}
-              className="mr-0 flex h-9 w-12 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-70"
+              className="flex w-9 shrink-0 items-center justify-center border-l border-primary/40 bg-primary text-primary-foreground transition-colors active:bg-primary/80 disabled:cursor-not-allowed disabled:bg-card disabled:text-muted-foreground disabled:opacity-70"
               aria-label="Send direct message"
             >
               {directMessages.isSending ? (
@@ -255,18 +289,6 @@ function DirectMessageThread({
                 <Send className="ml-0.5 h-4 w-4" />
               )}
             </button>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-border bg-sidebar transition-colors focus-within:border-primary">
-            <textarea
-              ref={inputRef}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Message..."
-              rows={2}
-              className="min-h-[58px] max-h-24 w-full resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none"
-            />
           </div>
         </div>
       </div>
@@ -336,11 +358,10 @@ function DirectMessageBubble({
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
       <div className={`flex max-w-[86%] flex-col gap-1 ${isOwn ? "items-end" : "items-start"}`}>
         <div
-          className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed shadow-sm break-words ${
-            isOwn
+          className={`rounded-lg px-3.5 py-2.5 text-sm leading-relaxed shadow-sm break-words ${isOwn
               ? "bg-[color-mix(in_oklch,var(--card)_82%,var(--brand)_18%)] text-foreground"
               : "bg-card text-foreground"
-          }`}
+            }`}
         >
           {message.body}
         </div>
@@ -349,6 +370,26 @@ function DirectMessageBubble({
         </span>
       </div>
     </div>
+  );
+}
+
+function SocialComposerPlaceholderButton({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled
+      className="flex h-5 w-9 cursor-not-allowed items-center justify-center text-primary opacity-90"
+      aria-label={`${label} (coming soon)`}
+      title={`${label} (coming soon)`}
+    >
+      {children}
+    </button>
   );
 }
 

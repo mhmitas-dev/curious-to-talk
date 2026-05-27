@@ -332,7 +332,7 @@ function JoiningRoomStage({
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex h-14 shrink-0 items-center justify-end bg-card px-4 shadow-sm">
+      <div className="flex h-16 shrink-0 items-center justify-end bg-card px-4 shadow-sm">
         <button
           onClick={onLeave}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-background text-destructive shadow-sm transition-all hover:bg-destructive hover:text-primary-foreground"
