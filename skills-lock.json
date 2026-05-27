@@ -25,6 +25,12 @@
       "skillPath": "skills/livekit-agents/SKILL.md",
       "computedHash": "373669b9a938ced840f301173e838a0046408acd0397c02c03420cc9b6a8cb42"
     },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
