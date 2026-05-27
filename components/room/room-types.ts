@@ -5,10 +5,18 @@ export interface Room {
 }
 
 export type SidebarTab = "apps" | "chat" | "social" | "settings";
+export type RoomAppId = "screenShare" | "youtube" | "spotify";
+export type RoomAppView = "main";
 export type ScreenShareMode = "standard" | "document";
 export type ScreenQuality = "720p" | "1080p";
 export type ScreenFPS = 15 | 30;
 export type BufferTime = 0 | 1 | 3 | 5;
+
+export interface RoomAppSession {
+  id: RoomAppId;
+  view: RoomAppView;
+  updatedAt: number;
+}
 
 export interface ScreenShareState {
   iAmSharing: boolean;
