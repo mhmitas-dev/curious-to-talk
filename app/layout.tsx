@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "Curious to Talk",
   description: "Voice room app for hanging out with friends.",
   applicationName: "Curious to Talk",
+  other: {
+    "apple-mobile-web-app-title": "Curious to Talk",
+  },
 };
 
 export const viewport: Viewport = {

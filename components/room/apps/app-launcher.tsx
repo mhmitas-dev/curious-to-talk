@@ -1,22 +1,22 @@
 "use client";
 
-import type { RoomAppId, ScreenShareState } from "../room-types";
 import { ROOM_APPS } from "./app-registry";
-import type { RoomAppMeta } from "./room-app-types";
+import type { RoomAppId } from "../room-types";
+import type { RoomAppModule, RoomAppRenderContext } from "./room-app-types";
 
 interface AppLauncherProps {
-  screenShare: ScreenShareState;
+  appContext: Omit<RoomAppRenderContext, "app">;
   onOpenApp: (appId: RoomAppId) => void;
 }
 
-export function AppLauncher({ screenShare, onOpenApp }: AppLauncherProps) {
+export function AppLauncher({ appContext, onOpenApp }: AppLauncherProps) {
   return (
     <div className="grid grid-cols-3 gap-x-3 gap-y-5 px-6 pb-4">
       {ROOM_APPS.map((app) => (
         <AppLauncherButton
           key={app.id}
           app={app}
-          screenShare={screenShare}
+          appContext={appContext}
           onOpen={() => onOpenApp(app.id)}
         />
       ))}
@@ -26,15 +26,14 @@ export function AppLauncher({ screenShare, onOpenApp }: AppLauncherProps) {
 
 function AppLauncherButton({
   app,
-  screenShare,
+  appContext,
   onOpen,
 }: {
-  app: RoomAppMeta;
-  screenShare: ScreenShareState;
+  app: RoomAppModule;
+  appContext: Omit<RoomAppRenderContext, "app">;
   onOpen: () => void;
 }) {
-  const isScreenShare = app.id === "screenShare";
-  const isActive = isScreenShare && screenShare.iAmSharing;
+  const isActive = app.isActive?.({ ...appContext, app }) ?? false;
   const Icon = app.Icon;
 
   return (

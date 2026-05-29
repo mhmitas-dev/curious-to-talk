@@ -1,4 +1,5 @@
 import type { IconType } from "react-icons";
+import type { ReactNode } from "react";
 import type {
   BufferTime,
   RoomAppId,
@@ -29,4 +30,14 @@ export interface ScreenShareAppSettings {
 export interface ScreenShareAppState extends ScreenShareAppSettings {
   screenShare: ScreenShareState;
   onToggleScreenShare: () => void | Promise<void>;
+}
+
+export interface RoomAppModule extends RoomAppMeta {
+  isActive?: (context: RoomAppRenderContext) => boolean;
+  render: (context: RoomAppRenderContext) => ReactNode;
+}
+
+export interface RoomAppRenderContext {
+  app: RoomAppModule;
+  screenShareApp: ScreenShareAppState;
 }

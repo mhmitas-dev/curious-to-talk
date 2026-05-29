@@ -3,9 +3,10 @@
 import { AppLauncher } from "./apps/app-launcher";
 import { getRoomApp } from "./apps/app-registry";
 import { AppsWorkspaceHeader } from "./apps/apps-workspace-header";
-import { PreviewApp } from "./apps/preview-app";
-import { ScreenShareApp } from "./apps/screen-share-app";
-import type { ScreenShareAppSettings } from "./apps/room-app-types";
+import type {
+  RoomAppRenderContext,
+  ScreenShareAppSettings,
+} from "./apps/room-app-types";
 import type { RoomAppId, ScreenShareState } from "./room-types";
 
 interface AppsTabProps extends ScreenShareAppSettings {
@@ -35,6 +36,20 @@ export function AppsTab({
 }: AppsTabProps) {
   const selectedApp = getRoomApp(activeApp);
   const lastApp = getRoomApp(lastActiveApp);
+  const appContext: Omit<RoomAppRenderContext, "app"> = {
+    screenShareApp: {
+      bufferTime,
+      screenShare,
+      screenFps,
+      screenQuality,
+      screenShareMode,
+      onToggleScreenShare,
+      setBufferTime,
+      setScreenFps,
+      setScreenQuality,
+      setScreenShareMode,
+    },
+  };
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -45,23 +60,10 @@ export function AppsTab({
         onOpenApp={openApp}
       />
 
-      {selectedApp?.id === "screenShare" ? (
-        <ScreenShareApp
-          bufferTime={bufferTime}
-          screenShare={screenShare}
-          screenFps={screenFps}
-          screenQuality={screenQuality}
-          screenShareMode={screenShareMode}
-          onToggleScreenShare={onToggleScreenShare}
-          setBufferTime={setBufferTime}
-          setScreenFps={setScreenFps}
-          setScreenQuality={setScreenQuality}
-          setScreenShareMode={setScreenShareMode}
-        />
-      ) : selectedApp ? (
-        <PreviewApp app={selectedApp} />
+      {selectedApp ? (
+        selectedApp.render({ ...appContext, app: selectedApp })
       ) : (
-        <AppLauncher screenShare={screenShare} onOpenApp={openApp} />
+        <AppLauncher appContext={appContext} onOpenApp={openApp} />
       )}
     </div>
   );
