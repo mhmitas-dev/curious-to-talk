@@ -1,8 +1,8 @@
-# Curious to Talk 🎙️
+# Niribi 🎙️
 
 An Voice Chat application built with Next.js, LiveKit, and Supabase. 
 
-This guide will walk you through deploying your own instance of "Curious to Talk" on a Linux Virtual Machine (VM).
+This guide will walk you through deploying your own instance of "Niribi" on a Linux Virtual Machine (VM).
 
 ---
 

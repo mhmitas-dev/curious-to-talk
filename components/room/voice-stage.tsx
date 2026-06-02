@@ -91,7 +91,7 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
         <Radio className="h-7 w-7 text-muted-foreground animate-pulse" style={{ animationDuration: "3s" }} />
       </div>
       <p className="mt-5 text-[10px] font-medium tracking-[0.2em] uppercase text-muted-foreground">
-        Curious to Talk
+        Niribi
       </p>
     </div>
   );

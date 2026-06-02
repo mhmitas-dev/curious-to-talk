@@ -85,7 +85,7 @@ function HomeHeader({ profile }: { profile: AuthProfile }) {
             🎙️
           </span>
           <span className="font-semibold text-foreground tracking-tight">
-            Curious to Talk
+            niribi
           </span>
         </Link>
 
@@ -168,7 +168,7 @@ function HomePhilosophy() {
   return (
     <footer className="mx-auto w-full max-w-lg px-4 pb-7 pt-3 text-center">
       <p className="text-sm font-semibold tracking-tight text-foreground">
-        Curious to Talk
+        Niribi
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         &ldquo;Quiet, simple, lightweight.&rdquo;

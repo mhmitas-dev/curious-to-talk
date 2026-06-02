@@ -1,5 +1,5 @@
 -- =============================================================
--- Curious to Talk — Direct Messages Foundation
+-- Niribi — Direct Messages Foundation
 -- Run this in the Supabase dashboard SQL editor after schema.sql
 -- =============================================================
 

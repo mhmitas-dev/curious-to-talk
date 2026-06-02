@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Curious to Talk",
+  title: "Niribi",
   description: "Voice room app for hanging out with friends.",
-  applicationName: "Curious to Talk",
+  applicationName: "Niribi",
   other: {
-    "apple-mobile-web-app-title": "Curious to Talk",
+    "apple-mobile-web-app-title": "Niribi",
   },
 };
 

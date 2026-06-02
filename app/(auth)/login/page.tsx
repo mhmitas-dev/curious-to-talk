@@ -35,7 +35,7 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight text-foreground">
-              Curious to Talk
+              Niribi
             </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               Sign in to join the conversation
@@ -60,7 +60,7 @@ export default function LoginPage() {
             )}
 
             <p className="text-center text-xs text-muted-foreground mb-1 leading-relaxed">
-              Curious to Talk is a private community. Sign in with your Google account below to request access.
+              Niribi is a private community. Sign in with your Google account below to request access.
             </p>
 
             <Button
