@@ -7,6 +7,7 @@ The documentation is intended for engineers and coding agents working on the pro
 ## Architecture
 
 - [Room Sidebar Applications](./architecture/room-sidebar-applications.md) - The scalable app workspace inside a room, including navigation ownership, module registration, and the current Screen Share, YouTube, and Spotify states.
+- [Room Stage and Shared Media](./architecture/room-stage-and-shared-media.md) - Proposed ownership, synchronization, takeover, recovery, and phased implementation architecture for Screen Share, YouTube, and future stage apps.
 
 ## Documentation Guidelines
 

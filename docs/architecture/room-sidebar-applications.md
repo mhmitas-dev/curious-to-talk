@@ -20,11 +20,13 @@ Applications has two internal states:
 1. **Launcher** - displays the available apps as phone-like app icons.
 2. **App page** - displays the selected app inside the same sidebar space.
 
-When an app page is open, the Applications header shows:
+The Applications header always shows:
 
-- a chevron button on the left that returns to the launcher;
+- a chevron button on the left, disabled on the launcher and enabled inside an app;
 - the stable `Applications` title;
-- the current app icon on the right.
+- a fixed right-side slot that shows only the current app icon while inside an app.
+
+The header does not expose a last-used app shortcut. Apps are reopened from the launcher, while the workspace state remembers where the user left them.
 
 Returning to the launcher does not end or reset an app. Switching to another sidebar tab also does not reset the current Applications page.
 
@@ -74,7 +76,7 @@ Location: `components/room/apps-tab.tsx`
 
 `AppsTab` composes the Applications workspace. It:
 
-- resolves the current and last-used app from the registry;
+- resolves the current app from the registry;
 - builds the app render context from room-owned state;
 - renders the workspace header;
 - renders either the launcher or the selected app.
@@ -142,7 +144,9 @@ The YouTube implementation must preserve these boundaries:
 - the app registry remains the entry point;
 - inactive UI should remain lightweight.
 
-The synchronization model, playback authority, API usage, and persistence rules have not been decided yet. They should be designed and documented before implementation.
+The first synchronization, playback-authority, transport, and persistence proposal is now documented. Remaining product choices are explicitly listed as open decisions rather than being hidden in implementation code.
+
+The proposed shared-stage and YouTube session architecture is documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md). Future YouTube work must follow or explicitly amend that document before implementation.
 
 ### Spotify
 

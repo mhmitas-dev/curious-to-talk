@@ -220,7 +220,6 @@ function RoomChrome({
         appsContent={
           <AppsTab
             activeApp={roomApps.activeApp}
-            lastActiveApp={roomApps.lastActiveApp}
             bufferTime={bufferTime}
             screenShare={screenShare}
             screenFps={screenFps}

@@ -11,7 +11,6 @@ import type { RoomAppId, ScreenShareState } from "./room-types";
 
 interface AppsTabProps extends ScreenShareAppSettings {
   activeApp: RoomAppId | null;
-  lastActiveApp: RoomAppId | null;
   screenShare: ScreenShareState;
   goAppsHome: () => void;
   onToggleScreenShare: () => void | Promise<void>;
@@ -20,7 +19,6 @@ interface AppsTabProps extends ScreenShareAppSettings {
 
 export function AppsTab({
   activeApp,
-  lastActiveApp,
   bufferTime,
   screenShare,
   screenFps,
@@ -35,7 +33,6 @@ export function AppsTab({
   setScreenShareMode,
 }: AppsTabProps) {
   const selectedApp = getRoomApp(activeApp);
-  const lastApp = getRoomApp(lastActiveApp);
   const appContext: Omit<RoomAppRenderContext, "app"> = {
     screenShareApp: {
       bufferTime,
@@ -55,9 +52,7 @@ export function AppsTab({
     <div className="flex h-full flex-col bg-sidebar">
       <AppsWorkspaceHeader
         activeApp={selectedApp}
-        lastApp={lastApp}
         onGoHome={goAppsHome}
-        onOpenApp={openApp}
       />
 
       {selectedApp ? (
