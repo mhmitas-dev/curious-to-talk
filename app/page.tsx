@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
 import { RoomsPresenceList } from "@/components/rooms-presence-list";
+import Image from "next/image";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -81,12 +82,14 @@ function HomeHeader({ profile }: { profile: AuthProfile }) {
     <header className="sticky top-0 z-10 bg-card/80 shadow-sm backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg" aria-hidden>
-            🎙️
-          </span>
-          <span className="font-semibold text-foreground tracking-tight">
-            Curious to Talk
-          </span>
+          <Image
+            src="/niribi.png"
+            alt="Niribi"
+            width={87}
+            height={35}
+            priority
+            className="h-7 w-auto"
+          />
         </Link>
 
         <div className="flex items-center gap-3">
@@ -168,7 +171,7 @@ function HomePhilosophy() {
   return (
     <footer className="mx-auto w-full max-w-lg px-4 pb-7 pt-3 text-center">
       <p className="text-sm font-semibold tracking-tight text-foreground">
-        Curious to Talk
+        Niribi
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         &ldquo;Quiet, simple, lightweight.&rdquo;

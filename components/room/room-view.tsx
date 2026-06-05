@@ -9,18 +9,11 @@ import {
   useConnectionState,
 } from "@livekit/components-react";
 import { ConnectionState } from "livekit-client";
-import {
-  LayoutGrid,
-  LoaderCircle,
-  LogOut,
-  MessageSquare,
-  Settings,
-  Users,
-  X,
-} from "lucide-react";
+import { LoaderCircle, LogOut } from "lucide-react";
 import { AppsTab } from "./apps-tab";
 import { ChatTab } from "./chat-tab";
 import { ParticipantPanel } from "./participant-panel";
+import { RoomSidebar } from "./room-sidebar";
 import type {
   BufferTime,
   ScreenFPS,
@@ -33,6 +26,7 @@ import { SocialTab } from "./social-tab";
 import { TopBar } from "./top-bar";
 import { useDirectMessageState } from "./use-direct-message-state";
 import { useLocalStorage } from "./use-local-storage";
+import { useRoomAppsState } from "./use-room-apps-state";
 import { useScreenShareState } from "./use-screen-share-state";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { VoiceStage } from "./voice-stage";
@@ -121,6 +115,7 @@ function RoomChrome({
   const chat = useChat();
   const router = useRouter();
   const screenWakeLock = useScreenWakeLock(hasEnteredRoom);
+  const roomApps = useRoomAppsState();
   const directMessages = useDirectMessageState({
     enabled: hasEnteredRoom,
     userId,
@@ -220,96 +215,53 @@ function RoomChrome({
         />
       )}
 
-      <aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-[92vw] max-w-[380px] flex-col border-l border-border/35 bg-sidebar shadow-2xl transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-      >
-        <div className="grid grid-cols-[1fr_auto] bg-card px-2 pt-2 pb-0 shadow-sm">
-          <div className="grid grid-cols-4">
-            {(["chat", "apps", "social", "settings"] as SidebarTab[]).map((tab) => {
-              const Icon =
-                tab === "chat"
-                  ? MessageSquare
-                  : tab === "apps"
-                    ? LayoutGrid
-                    : tab === "social"
-                      ? Users
-                      : Settings;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => openSidebarTo(tab)}
-                  className={`relative flex flex-1 items-center justify-center py-3 transition-colors ${sidebarTab === tab
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  title={tab}
-                  aria-label={tab}
-                >
-                  <Icon className="h-5 w-5" />
-                  {tab === "social" && directMessages.unreadTotal > 0 && (
-                    <span className="absolute right-4 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
-                      {directMessages.unreadTotal > 9 ? "9+" : directMessages.unreadTotal}
-                    </span>
-                  )}
-                  {sidebarTab === tab && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            onClick={closeSidebar}
-            className="relative flex w-12 items-center justify-center py-3 text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Close sidebar"
-            title="close"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {sidebarTab === "apps" && (
-            <AppsTab
-              screenQuality={screenQuality}
-              screenFps={screenFps}
-              screenShare={screenShare}
-              onToggleScreenShare={toggleScreenShare}
-            />
-          )}
-          {sidebarTab === "chat" && (
-            <ChatTab
-              chatMessages={chat.chatMessages}
-              isSending={chat.isSending}
-              localIdentity={userId}
-              send={chat.send}
-            />
-          )}
-          {sidebarTab === "social" && (
-            <SocialTab
-              directMessages={directMessages}
-              localUserId={userId}
-            />
-          )}
-          {sidebarTab === "settings" && (
-            <SettingsTab
-              screenShareMode={screenShareMode}
-              setScreenShareMode={setScreenShareMode}
-              screenQuality={screenQuality}
-              setScreenQuality={setScreenQuality}
-              screenFps={screenFps}
-              setScreenFps={setScreenFps}
-              bufferTime={bufferTime}
-              setBufferTime={setBufferTime}
-              wakeLockStatus={screenWakeLock.status}
-              wakeLockError={screenWakeLock.error}
-              wakeLockEnabled={screenWakeLock.isEnabled}
-              onToggleWakeLock={screenWakeLock.toggle}
-            />
-          )}
-        </div>
-      </aside>
+      <RoomSidebar
+        activeTab={sidebarTab}
+        appsContent={
+          <AppsTab
+            activeApp={roomApps.activeApp}
+            lastActiveApp={roomApps.lastActiveApp}
+            bufferTime={bufferTime}
+            screenShare={screenShare}
+            screenFps={screenFps}
+            screenQuality={screenQuality}
+            screenShareMode={screenShareMode}
+            goAppsHome={roomApps.goAppsHome}
+            onToggleScreenShare={toggleScreenShare}
+            openApp={roomApps.openApp}
+            setBufferTime={setBufferTime}
+            setScreenFps={setScreenFps}
+            setScreenQuality={setScreenQuality}
+            setScreenShareMode={setScreenShareMode}
+          />
+        }
+        chatContent={
+          <ChatTab
+            chatMessages={chat.chatMessages}
+            isSending={chat.isSending}
+            localIdentity={userId}
+            send={chat.send}
+          />
+        }
+        onClose={closeSidebar}
+        onOpenTab={openSidebarTo}
+        open={sidebarOpen}
+        settingsContent={
+          <SettingsTab
+            wakeLockStatus={screenWakeLock.status}
+            wakeLockError={screenWakeLock.error}
+            wakeLockEnabled={screenWakeLock.isEnabled}
+            onToggleWakeLock={screenWakeLock.toggle}
+          />
+        }
+        socialContent={
+          <SocialTab
+            directMessages={directMessages}
+            localUserId={userId}
+          />
+        }
+        unreadSocialCount={directMessages.unreadTotal}
+      />
     </>
   );
 }

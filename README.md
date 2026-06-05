@@ -1,8 +1,8 @@
-# Curious to Talk 🎙️
+# Niribi 🎙️
 
 An Voice Chat application built with Next.js, LiveKit, and Supabase. 
 
-This guide will walk you through deploying your own instance of "Curious to Talk" on a Linux Virtual Machine (VM).
+This guide will walk you through deploying your own instance of "Niribi" on a Linux Virtual Machine (VM).
 
 ---
 
@@ -172,3 +172,7 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## Engineering Documentation
+
+Architecture and implementation decisions are documented in [`docs/`](./docs/README.md). Read the relevant architecture document before changing a feature area, and update it when a change affects state ownership, lifecycle, constraints, or extension patterns.

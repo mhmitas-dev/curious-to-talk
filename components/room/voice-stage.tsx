@@ -4,7 +4,35 @@ import { useEffect, useRef, useState } from "react";
 import { useTracks, VideoTrack } from "@livekit/components-react";
 import { RemoteAudioTrack, RemoteTrack, Track } from "livekit-client";
 import { Maximize, Minimize, Radio, Volume2, VolumeX } from "lucide-react";
+import Image from "next/image";
 import type { BufferTime } from "./room-types";
+
+type ScreenOrientationController = ScreenOrientation & {
+  lock?: (orientation: "landscape") => Promise<void>;
+  unlock?: () => void;
+};
+
+function getScreenOrientationController() {
+  return screen.orientation as ScreenOrientationController | undefined;
+}
+
+async function lockSharedScreenLandscape() {
+  try {
+    // Best-effort mobile polish: Android Chrome can rotate shared-screen fullscreen
+    // to landscape. Unsupported browsers, especially iOS Safari, should keep normal fullscreen.
+    await getScreenOrientationController()?.lock?.("landscape");
+  } catch {
+    // Orientation lock support is inconsistent, so failing quietly keeps fullscreen reliable.
+  }
+}
+
+function unlockSharedScreenOrientation() {
+  try {
+    getScreenOrientationController()?.unlock?.();
+  } catch {
+    // Some browsers expose orientation APIs but reject unlock outside their supported flow.
+  }
+}
 
 export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
   const screenShareTracks = useTracks([
@@ -22,7 +50,11 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current);
+      const isStageFullscreen = document.fullscreenElement === containerRef.current;
+      setIsFullscreen(isStageFullscreen);
+      if (!isStageFullscreen) {
+        unlockSharedScreenOrientation();
+      }
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -42,13 +74,14 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
     }
   }, [activeAudio?.publication?.track, isAudioMuted]);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch((err) => {
+      containerRef.current?.requestFullscreen().then(lockSharedScreenLandscape).catch((err) => {
         console.error("Error attempting to enable fullscreen:", err);
       });
     } else {
-      document.exitFullscreen();
+      await document.exitFullscreen();
+      unlockSharedScreenOrientation();
     }
   };
 
@@ -90,9 +123,13 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
       >
         <Radio className="h-7 w-7 text-muted-foreground animate-pulse" style={{ animationDuration: "3s" }} />
       </div>
-      <p className="mt-5 text-[10px] font-medium tracking-[0.2em] uppercase text-muted-foreground">
-        Curious to Talk
-      </p>
+      <Image
+        src="/niribi.png"
+        alt="Niribi"
+        width={72}
+        height={29}
+        className="mt-5 h-5 w-auto opacity-70"
+      />
     </div>
   );
 }

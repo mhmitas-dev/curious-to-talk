@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { signInWithGoogle } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [state, action, isPending] = useActionState(signInWithGoogle, undefined);
@@ -22,21 +23,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--brand-bright), var(--brand-deep))",
-              boxShadow:
-                "0 0 32px color-mix(in oklch, var(--brand) 40%, transparent)",
-            }}
-          >
-            🎙️
-          </div>
+          <Image
+            src="/niribi.png"
+            alt="Niribi"
+            width={145}
+            height={58}
+            priority
+            className="h-14 w-auto"
+          />
           <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">
-              Curious to Talk
-            </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               Sign in to join the conversation
             </p>
@@ -60,7 +55,7 @@ export default function LoginPage() {
             )}
 
             <p className="text-center text-xs text-muted-foreground mb-1 leading-relaxed">
-              Curious to Talk is a private community. Sign in with your Google account below to request access.
+              Niribi is a private community. Sign in with your Google account below to request access.
             </p>
 
             <Button

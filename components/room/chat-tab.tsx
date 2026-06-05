@@ -126,7 +126,7 @@ export function ChatTab({ chatMessages, isSending, localIdentity, send }: Props)
             </div>
           </div>
 
-          <div className="flex overflow-hidden rounded-[4px] border border-primary/70 bg-sidebar transition-colors focus-within:border-primary">
+          <div className="flex overflow-hidden rounded-[4px] border border-border bg-sidebar transition-colors focus-within:border-primary">
             <textarea
               ref={inputRef}
               value={draft}

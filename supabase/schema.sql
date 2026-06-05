@@ -1,5 +1,5 @@
 -- =============================================================
--- Curious to Talk — Initial Schema
+-- Niribi — Initial Schema
 -- Run this in the Supabase dashboard SQL editor
 -- =============================================================
 
