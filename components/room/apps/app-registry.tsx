@@ -6,7 +6,6 @@ import type { RoomAppId } from "../room-types";
 import { PreviewApp } from "./preview-app";
 import type { RoomAppModule } from "./room-app-types";
 import { ScreenShareApp } from "./screen-share-app";
-import { YouTubeApp } from "./youtube-app";
 
 export const ROOM_APPS: RoomAppModule[] = [
   {
@@ -20,10 +19,9 @@ export const ROOM_APPS: RoomAppModule[] = [
   {
     id: "youtube",
     label: "YouTube",
-    description: "Watch together.",
+    description: "Watch together. Rebuild planned.",
     Icon: FaYoutube,
-    isActive: ({ youtubeApp }) => !!youtubeApp.session,
-    render: ({ youtubeApp }) => <YouTubeApp {...youtubeApp} />,
+    render: ({ app }) => <PreviewApp app={app} />,
   },
   {
     id: "spotify",

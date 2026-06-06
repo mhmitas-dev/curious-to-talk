@@ -132,19 +132,20 @@ Screen-share settings are stored in local storage by `RoomChrome` and passed dow
 
 ### YouTube
 
-Status: initial LiveKit-first host/viewer runtime.
+Status: registered placeholder. Runtime paused.
 
-Component: `components/room/apps/youtube-app.tsx`
+Component: `components/room/apps/preview-app.tsx`
 
-The Applications launcher opens a focused YouTube page with a link input. Starting a video makes the local participant the host and puts YouTube on the room stage until the host ends it or leaves the LiveKit room. The previous Supabase-backed runtime was removed and should not be repaired.
+The Applications launcher shows YouTube as a future app slot, but YouTube does not currently start playback or occupy the stage.
 
-The next YouTube implementation should follow the LiveKit-first session model documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
+Previous YouTube runtime attempts were removed because they produced fragile synchronization behavior. The cleanup is intentional; do not repair deleted YouTube session/player files piecemeal.
+
+The next YouTube implementation should follow the guardrails documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
 
 - shared YouTube state is live room session state, not durable database history;
-- the current host is discovered through LiveKit participant attributes;
-- playback commands are sent with LiveKit reliable data packets;
-- late joiners use host RPC to request a fresh snapshot;
-- if the host leaves, the YouTube stage ends;
+- LiveKit may coordinate low-frequency user intent;
+- high-frequency progress updates must not be stored in participant attributes or the database;
+- if the host leaves, the YouTube stage should end;
 - Supabase should not own active YouTube playback.
 
 The YouTube app must still preserve these sidebar boundaries:
