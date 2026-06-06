@@ -12,6 +12,7 @@ export type ScreenShareMode = "standard" | "document";
 export type ScreenQuality = "720p" | "1080p";
 export type ScreenFPS = 15 | 30;
 export type BufferTime = 0 | 1 | 3 | 5;
+export type YouTubePlaybackStatus = "buffering" | "paused" | "playing";
 
 export interface RoomAppSession {
   id: RoomAppId;
@@ -24,4 +25,14 @@ export interface ScreenShareState {
   iAmSharing: boolean;
   someoneElseIsSharing: boolean;
   sharerName: string;
+}
+
+export interface YouTubeActivitySession {
+  hostIdentity: string;
+  playbackStatus: YouTubePlaybackStatus;
+  positionSeconds: number;
+  revision: number;
+  sessionId: string;
+  updatedAt: number;
+  videoId: string;
 }

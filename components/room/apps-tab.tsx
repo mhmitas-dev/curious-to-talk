@@ -7,7 +7,11 @@ import type {
   RoomAppRenderContext,
   ScreenShareAppSettings,
 } from "./apps/room-app-types";
-import type { RoomAppId, ScreenShareState } from "./room-types";
+import type {
+  RoomAppId,
+  ScreenShareState,
+  YouTubeActivitySession,
+} from "./room-types";
 
 interface AppsTabProps extends ScreenShareAppSettings {
   activeApp: RoomAppId | null;
@@ -19,6 +23,14 @@ interface AppsTabProps extends ScreenShareAppSettings {
   goAppsHome: () => void;
   onToggleScreenShare: () => void | Promise<void>;
   openApp: (appId: RoomAppId) => void;
+  youtubeDisabledReason: string | null;
+  youtubeError: string | null;
+  youtubeIsHost: boolean;
+  youtubeIsRecovering: boolean;
+  youtubeIsStarting: boolean;
+  youtubeSession: YouTubeActivitySession | null;
+  onEndYouTube: () => void | Promise<void>;
+  onStartYouTube: (input: string) => Promise<"failed" | "invalid" | "occupied" | "started">;
 }
 
 export function AppsTab({
@@ -35,6 +47,14 @@ export function AppsTab({
   goAppsHome,
   onToggleScreenShare,
   openApp,
+  youtubeDisabledReason,
+  youtubeError,
+  youtubeIsHost,
+  youtubeIsRecovering,
+  youtubeIsStarting,
+  youtubeSession,
+  onEndYouTube,
+  onStartYouTube,
   setBufferTime,
   setScreenFps,
   setScreenQuality,
@@ -57,6 +77,19 @@ export function AppsTab({
       setScreenFps,
       setScreenQuality,
       setScreenShareMode,
+    },
+    youtubeApp: {
+      disabled: !!youtubeDisabledReason || youtubeIsRecovering,
+      disabledReason: youtubeIsRecovering
+        ? "Checking whether YouTube is already active."
+        : youtubeDisabledReason,
+      error: youtubeError,
+      isHost: youtubeIsHost,
+      isRecovering: youtubeIsRecovering,
+      isStarting: youtubeIsStarting,
+      session: youtubeSession,
+      onEnd: onEndYouTube,
+      onStart: onStartYouTube,
     },
   };
 

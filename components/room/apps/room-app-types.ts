@@ -7,6 +7,7 @@ import type {
   ScreenQuality,
   ScreenShareMode,
   ScreenShareState,
+  YouTubeActivitySession,
 } from "../room-types";
 
 export interface RoomAppMeta {
@@ -36,6 +37,18 @@ export interface ScreenShareAppState extends ScreenShareAppSettings {
   onToggleScreenShare: () => void | Promise<void>;
 }
 
+export interface YouTubeAppState {
+  disabled: boolean;
+  disabledReason: string | null;
+  error: string | null;
+  isHost: boolean;
+  isRecovering: boolean;
+  isStarting: boolean;
+  session: YouTubeActivitySession | null;
+  onEnd: () => void | Promise<void>;
+  onStart: (input: string) => Promise<"failed" | "invalid" | "occupied" | "started">;
+}
+
 export interface RoomAppModule extends RoomAppMeta {
   isActive?: (context: RoomAppRenderContext) => boolean;
   render: (context: RoomAppRenderContext) => ReactNode;
@@ -44,4 +57,5 @@ export interface RoomAppModule extends RoomAppMeta {
 export interface RoomAppRenderContext {
   app: RoomAppModule;
   screenShareApp: ScreenShareAppState;
+  youtubeApp: YouTubeAppState;
 }

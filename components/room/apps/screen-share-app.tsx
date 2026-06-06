@@ -32,8 +32,10 @@ export function ScreenShareApp({
           : "Create screen share";
   const statusText = iAmSharing
     ? "You are presenting"
-    : someoneElseIsSharing || stageOccupied
+    : someoneElseIsSharing
       ? `${sharerName} is presenting`
+      : stageOccupied
+        ? "The stage is in use"
       : "Ready to share";
 
   return (
@@ -59,15 +61,19 @@ export function ScreenShareApp({
             <p className="text-sm font-medium text-foreground">
               {iAmSharing
                 ? "Screen share is live"
-                : someoneElseIsSharing || stageOccupied
+                : someoneElseIsSharing
                   ? "Someone is already sharing"
+                  : stageOccupied
+                    ? "Stage is already in use"
                   : "Share your screen"}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {iAmSharing
                 ? "Stop when you are finished presenting."
-                : someoneElseIsSharing || stageOccupied
+                : someoneElseIsSharing
                   ? "Only one screen share can run in the room at a time."
+                  : stageOccupied
+                    ? "End the current stage activity before starting screen share."
                   : "Choose a tab, window, or screen from your browser prompt."}
             </p>
             <p className="mt-3 text-xs font-medium text-primary">

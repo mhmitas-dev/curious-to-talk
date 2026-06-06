@@ -29,6 +29,7 @@ import { useDirectMessageState } from "./use-direct-message-state";
 import { useLocalStorage } from "./use-local-storage";
 import { useRoomAppsState } from "./use-room-apps-state";
 import { useRoomStageState } from "./use-room-stage-state";
+import { useRoomYouTubeActivity } from "./use-room-youtube-activity";
 import { useScreenShareState } from "./use-screen-share-state";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 
@@ -125,6 +126,11 @@ function RoomChrome({
     stopScreenShare,
     userId,
   });
+  const youtube = useRoomYouTubeActivity({
+    enabled: hasEnteredRoom,
+    screenShareActive: roomStage.owner === "screenShare",
+    userId,
+  });
   const chat = useChat();
   const router = useRouter();
   const screenWakeLock = useScreenWakeLock(hasEnteredRoom);
@@ -215,6 +221,12 @@ function RoomChrome({
         <RoomStage
           bufferTime={bufferTime}
           owner={roomStage.owner}
+          youtube={{
+            isHost: youtube.isHost,
+            onEnd: youtube.end,
+            onHostPlaybackChange: youtube.updateHostPlayback,
+            session: youtube.session,
+          }}
         />
         <ParticipantPanel
           expanded={participantsExpanded}
@@ -245,11 +257,28 @@ function RoomChrome({
             onToggleScreenShare={roomStage.toggleScreenShare}
             stageError={roomStage.error}
             stageOccupied={
-              roomStage.owner !== "idle" && !screenShare.iAmSharing
+              (roomStage.owner !== "idle" && !screenShare.iAmSharing) ||
+              youtube.isActive
             }
             stageReady={!roomStage.isLoading && !!roomStage.stage}
             stageTransitioning={roomStage.isTransitioning}
             openApp={roomApps.openApp}
+            youtubeDisabledReason={
+              roomStage.owner === "screenShare"
+                ? "Screen Share is currently using the stage."
+                : youtube.session
+                  ? youtube.isHost
+                    ? "You are already hosting YouTube."
+                    : "Someone is already hosting YouTube."
+                  : null
+            }
+            youtubeError={youtube.error}
+            youtubeIsHost={youtube.isHost}
+            youtubeIsRecovering={youtube.isRecovering}
+            youtubeIsStarting={youtube.isStarting}
+            youtubeSession={youtube.session}
+            onEndYouTube={youtube.end}
+            onStartYouTube={youtube.start}
             setBufferTime={setBufferTime}
             setScreenFps={setScreenFps}
             setScreenQuality={setScreenQuality}

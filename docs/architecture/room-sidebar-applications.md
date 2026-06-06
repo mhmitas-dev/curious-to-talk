@@ -132,11 +132,11 @@ Screen-share settings are stored in local storage by `RoomChrome` and passed dow
 
 ### YouTube
 
-Status: registered placeholder. Runtime paused.
+Status: Phase 5 viewer-sync and recovery shell.
 
-Component: `components/room/apps/preview-app.tsx`
+Component: `components/room/apps/youtube-app.tsx`
 
-The Applications launcher shows YouTube as a future app slot, but YouTube does not currently start playback or occupy the stage.
+The Applications launcher opens a YouTube page with a link field and start/end controls. Starting YouTube creates a LiveKit-only room session. The host gets React Player playback on the stage, and viewers get read-only playback synchronized by LiveKit packets. Late-joining or refreshed clients recover active YouTube state through a short bounded state-request burst owned by the room shell.
 
 Previous YouTube runtime attempts were removed because they produced fragile synchronization behavior. The cleanup is intentional; do not repair deleted YouTube session/player files piecemeal.
 
@@ -146,6 +146,7 @@ The next YouTube implementation should follow the guardrails documented in [Room
 - LiveKit may coordinate low-frequency user intent;
 - high-frequency progress updates must not be stored in participant attributes or the database;
 - if the host leaves, the YouTube stage should end;
+- Screen Share must be disabled while YouTube is active, until the YouTube host ends YouTube or leaves;
 - Supabase should not own active YouTube playback.
 
 The YouTube app must still preserve these sidebar boundaries:
@@ -155,6 +156,8 @@ The YouTube app must still preserve these sidebar boundaries:
 - app-specific navigation belongs to the YouTube app state, not the top-level sidebar tab state;
 - the app registry remains the entry point;
 - inactive UI should remain lightweight.
+
+The Applications page may own YouTube form state, validation messages, and app navigation. It must not be the only owner of an active YouTube room session. Once a user starts YouTube, the long-lived session owner belongs in the always-mounted room shell so switching sidebar tabs or closing the sidebar cannot stop or desynchronize playback.
 
 Queueing, takeover, and collaborative controls must not be introduced until the simple host/viewer model is stable.
 
