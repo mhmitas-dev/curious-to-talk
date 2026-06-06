@@ -23,21 +23,23 @@ import type {
 } from "./room-types";
 import { SettingsTab } from "./settings-tab";
 import { SocialTab } from "./social-tab";
+import { RoomStage } from "./stage/room-stage";
 import { TopBar } from "./top-bar";
 import { useDirectMessageState } from "./use-direct-message-state";
 import { useLocalStorage } from "./use-local-storage";
 import { useRoomAppsState } from "./use-room-apps-state";
+import { useRoomStageState } from "./use-room-stage-state";
 import { useScreenShareState } from "./use-screen-share-state";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
-import { VoiceStage } from "./voice-stage";
 
 interface Props {
+  roomId: string;
   token: string;
   livekitUrl: string;
   userId: string;
 }
 
-export function RoomView({ token, livekitUrl, userId }: Props) {
+export function RoomView({ roomId, token, livekitUrl, userId }: Props) {
   const router = useRouter();
   const [hasEnteredRoom, setHasEnteredRoom] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export function RoomView({ token, livekitUrl, userId }: Props) {
         style={{ display: "contents" }}
       >
         <RoomChrome
+          roomId={roomId}
           userId={userId}
           hasEnteredRoom={hasEnteredRoom}
           joinError={joinError}
@@ -87,10 +90,12 @@ export function RoomView({ token, livekitUrl, userId }: Props) {
 }
 
 function RoomChrome({
+  roomId,
   userId,
   hasEnteredRoom,
   joinError,
 }: {
+  roomId: string;
   userId: string;
   hasEnteredRoom: boolean;
   joinError: string | null;
@@ -107,10 +112,18 @@ function RoomChrome({
   const [screenQuality, setScreenQuality] = useLocalStorage<ScreenQuality>("ctt_screenQuality", "720p");
   const [screenFps, setScreenFps] = useLocalStorage<ScreenFPS>("ctt_screenFps", 30);
   const [bufferTime, setBufferTime] = useLocalStorage<BufferTime>("ctt_bufferTime", 0);
-  const { screenShare, toggleScreenShare } = useScreenShareState({
+  const { screenShare, startScreenShare, stopScreenShare } = useScreenShareState({
     screenShareMode,
     screenQuality,
     screenFps,
+  });
+  const roomStage = useRoomStageState({
+    enabled: hasEnteredRoom,
+    roomId,
+    screenShare,
+    startScreenShare,
+    stopScreenShare,
+    userId,
   });
   const chat = useChat();
   const router = useRouter();
@@ -199,7 +212,10 @@ function RoomChrome({
         className={`relative flex flex-1 min-h-0 flex-col transition-all duration-300 ${sidebarOpen ? "md:pr-[380px]" : ""
           }`}
       >
-        <VoiceStage bufferTime={bufferTime} />
+        <RoomStage
+          bufferTime={bufferTime}
+          owner={roomStage.owner}
+        />
         <ParticipantPanel
           expanded={participantsExpanded}
           onMessageParticipant={openDirectMessageFromParticipant}
@@ -226,7 +242,11 @@ function RoomChrome({
             screenQuality={screenQuality}
             screenShareMode={screenShareMode}
             goAppsHome={roomApps.goAppsHome}
-            onToggleScreenShare={toggleScreenShare}
+            onToggleScreenShare={roomStage.toggleScreenShare}
+            stageError={roomStage.error}
+            stageOccupied={roomStage.owner !== "idle" && !screenShare.iAmSharing}
+            stageReady={!roomStage.isLoading && !!roomStage.stage}
+            stageTransitioning={roomStage.isTransitioning}
             openApp={roomApps.openApp}
             setBufferTime={setBufferTime}
             setScreenFps={setScreenFps}

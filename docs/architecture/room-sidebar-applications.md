@@ -128,25 +128,34 @@ Component: `components/room/apps/screen-share-app.tsx`
 
 The Screen Share page displays status, starts/stops sharing, and owns the settings UI. The underlying LiveKit state remains warm in `useScreenShareState`, called from `RoomChrome`, so switching sidebar tabs does not cause screen-share status to be rediscovered or interrupted.
 
-Screen-share settings are stored in local storage by `RoomChrome` and passed down explicitly. Mode, resolution, and frame-rate settings apply when a new share starts. Viewer buffer is applied to received playback by `VoiceStage` and has a different lifecycle.
+Screen-share settings are stored in local storage by `RoomChrome` and passed down explicitly. Mode, resolution, and frame-rate settings apply when a new share starts. Viewer buffer is applied to received playback by `ScreenShareStage` and has a different lifecycle.
 
 ### YouTube
 
-Status: registered placeholder.
+Status: placeholder. Runtime removed pending LiveKit-first rebuild.
 
-The launcher entry is real, but the app currently renders `PreviewApp`. The next implementation step is to replace that registry render function with a dedicated YouTube app module.
+Current renderer: `PreviewApp` through `components/room/apps/app-registry.tsx`
 
-The YouTube implementation must preserve these boundaries:
+The current Applications launcher shows YouTube as a future app slot only. The previous Supabase-backed runtime was removed and should not be repaired.
 
-- durable room/player state should not be owned only by a conditionally mounted page;
+The next YouTube implementation should follow the LiveKit-first session model documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
+
+- shared YouTube state is live room session state, not durable database history;
+- the current host is discovered through LiveKit participant attributes;
+- playback commands are sent with LiveKit reliable data packets;
+- late joiners use host RPC to request a fresh snapshot;
+- if the host leaves, the YouTube stage ends;
+- Supabase should not own active YouTube playback.
+
+The YouTube app must still preserve these sidebar boundaries:
+
+- room-wide LiveKit session state should not be owned only by a conditionally mounted page;
 - switching sidebar tabs must not unintentionally stop or reset an active shared activity;
 - app-specific navigation belongs to the YouTube app state, not the top-level sidebar tab state;
 - the app registry remains the entry point;
 - inactive UI should remain lightweight.
 
-The first synchronization, playback-authority, transport, and persistence proposal is now documented. Remaining product choices are explicitly listed as open decisions rather than being hidden in implementation code.
-
-The proposed shared-stage and YouTube session architecture is documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md). Future YouTube work must follow or explicitly amend that document before implementation.
+Queueing, takeover, and collaborative controls must not be introduced until the simple host/viewer model is stable.
 
 ### Spotify
 

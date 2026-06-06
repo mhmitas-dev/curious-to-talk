@@ -33,6 +33,7 @@ export default async function RoomPage({ params }: Props) {
 
   return (
     <RoomView
+      roomId={room.id}
       token={jwt}
       livekitUrl={livekitUrl}
       userId={userId}

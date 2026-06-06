@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTracks, VideoTrack } from "@livekit/components-react";
 import { RemoteAudioTrack, RemoteTrack, Track } from "livekit-client";
-import { Maximize, Minimize, Radio, Volume2, VolumeX } from "lucide-react";
-import Image from "next/image";
-import type { BufferTime } from "./room-types";
+import { Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import type { BufferTime } from "../room-types";
+import { IdleStage } from "./idle-stage";
 
 type ScreenOrientationController = ScreenOrientation & {
   lock?: (orientation: "landscape") => Promise<void>;
@@ -19,7 +19,7 @@ function getScreenOrientationController() {
 async function lockSharedScreenLandscape() {
   try {
     // Best-effort mobile polish: Android Chrome can rotate shared-screen fullscreen
-    // to landscape. Unsupported browsers, especially iOS Safari, should keep normal fullscreen.
+    // to landscape. Unsupported browsers, especially iOS Safari, keep normal fullscreen.
     await getScreenOrientationController()?.lock?.("landscape");
   } catch {
     // Orientation lock support is inconsistent, so failing quietly keeps fullscreen reliable.
@@ -34,7 +34,7 @@ function unlockSharedScreenOrientation() {
   }
 }
 
-export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
+export function ScreenShareStage({ bufferTime }: { bufferTime: BufferTime }) {
   const screenShareTracks = useTracks([
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
@@ -76,8 +76,8 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().then(lockSharedScreenLandscape).catch((err) => {
-        console.error("Error attempting to enable fullscreen:", err);
+      containerRef.current?.requestFullscreen().then(lockSharedScreenLandscape).catch((error) => {
+        console.error("Error attempting to enable fullscreen:", error);
       });
     } else {
       await document.exitFullscreen();
@@ -85,51 +85,44 @@ export function VoiceStage({ bufferTime }: { bufferTime: BufferTime }) {
     }
   };
 
-  if (activeShare && activeShare.publication) {
-    return (
-      <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-black p-0 md:p-4">
-        <div
-          ref={containerRef}
-          className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black"
-        >
-          <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
-            {activeAudio && (
-              <button
-                onClick={() => setIsAudioMuted(!isAudioMuted)}
-                className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
-                aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
-              >
-                {isAudioMuted ? <VolumeX className="h-5 w-5 text-destructive" /> : <Volume2 className="h-5 w-5" />}
-              </button>
-            )}
-            <button
-              onClick={toggleFullscreen}
-              className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
-              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  if (!activeShare?.publication) {
+    return <IdleStage />;
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-sidebar px-6 pointer-events-none opacity-25 select-none">
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-black p-0 md:p-4">
       <div
-        className="flex h-20 w-20 items-center justify-center rounded-full bg-card shadow-sm"
+        ref={containerRef}
+        className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black"
       >
-        <Radio className="h-7 w-7 text-muted-foreground animate-pulse" style={{ animationDuration: "3s" }} />
+        <VideoTrack trackRef={activeShare} className="w-full h-full object-contain" />
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+          {activeAudio && (
+            <button
+              onClick={() => setIsAudioMuted(!isAudioMuted)}
+              className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
+              aria-label={isAudioMuted ? "Unmute screen share" : "Mute screen share"}
+            >
+              {isAudioMuted ? (
+                <VolumeX className="h-5 w-5 text-destructive" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </button>
+          )}
+          <button
+            onClick={toggleFullscreen}
+            className="rounded-lg border border-border/25 bg-card/35 p-2 text-card-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-card/55"
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize className="h-5 w-5" />
+            ) : (
+              <Maximize className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
-      <Image
-        src="/niribi.png"
-        alt="Niribi"
-        width={72}
-        height={29}
-        className="mt-5 h-5 w-auto opacity-70"
-      />
     </div>
   );
 }

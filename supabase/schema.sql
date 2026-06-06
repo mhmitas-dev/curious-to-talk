@@ -412,3 +412,6 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- Room stage ownership is installed separately because it is an incremental
+-- feature migration. After this schema, run supabase/room_stage.sql.

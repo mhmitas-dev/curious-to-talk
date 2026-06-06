@@ -70,7 +70,7 @@ npm install
 ### Step 3: Supabase Setup
 
 1. Create a new project in [Supabase](https://supabase.com/).
-2. Run any required SQL migrations (if your project includes a `/supabase/migrations` folder) in the SQL Editor.
+2. Run the Supabase SQL files in this order: `supabase/schema.sql`, then `supabase/room_stage.sql`. Apply any other feature migrations used by your deployment afterward.
 3. Go to **Project Settings > API** and copy:
    - Your **Project URL**
    - Your **anon / public key** (Make sure to enable Data API access for the tables you need).

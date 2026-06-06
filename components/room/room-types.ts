@@ -7,6 +7,7 @@ export interface Room {
 export type SidebarTab = "apps" | "chat" | "social" | "settings";
 export type RoomAppId = "screenShare" | "youtube" | "spotify";
 export type RoomAppView = "main";
+export type RoomStageOwner = "idle" | "screenShare";
 export type ScreenShareMode = "standard" | "document";
 export type ScreenQuality = "720p" | "1080p";
 export type ScreenFPS = 15 | 30;
@@ -19,6 +20,7 @@ export interface RoomAppSession {
 }
 
 export interface ScreenShareState {
+  activeParticipantId: string | null;
   iAmSharing: boolean;
   someoneElseIsSharing: boolean;
   sharerName: string;

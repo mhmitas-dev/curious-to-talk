@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useLocalParticipant, useTracks } from "@livekit/components-react";
 import { AudioPresets, ScreenSharePresets, Track } from "livekit-client";
 import type { ScreenFPS, ScreenQuality, ScreenShareMode, ScreenShareState } from "./room-types";
@@ -35,7 +35,9 @@ export function useScreenShareState({
   ]);
 
   const iAmSharing = localParticipant.isScreenShareEnabled;
-  const activeSharingParticipant = screenShareTracks[0]?.participant;
+  const activeSharingParticipant = iAmSharing
+    ? localParticipant
+    : screenShareTracks[0]?.participant;
   const someoneElseIsSharing = !!activeSharingParticipant && !iAmSharing;
   const sharerName =
     activeSharingParticipant?.name ?? activeSharingParticipant?.identity ?? "Someone";
@@ -60,8 +62,8 @@ export function useScreenShareState({
     return () => clearTimeout(timer);
   }, [iAmSharing, localParticipant]);
 
-  const toggleScreenShare = async () => {
-    if (someoneElseIsSharing) return;
+  const startScreenShare = useCallback(async () => {
+    if (someoneElseIsSharing || localParticipant.isScreenShareEnabled) return false;
     try {
       const effectiveQuality = screenShareMode === "document" ? "1080p" : screenQuality;
       const effectiveFps = screenShareMode === "document" ? 15 : screenFps;
@@ -81,7 +83,7 @@ export function useScreenShareState({
             : screenShareBitrates[screenQuality][screenFps],
       };
 
-      await localParticipant.setScreenShareEnabled(!iAmSharing, {
+      await localParticipant.setScreenShareEnabled(true, {
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
@@ -96,12 +98,33 @@ export function useScreenShareState({
         forceStereo: true,
         screenShareEncoding,
       });
+      return true;
     } catch (e) {
-      console.error("Failed to toggle screen share", e);
+      console.error("Failed to start screen share", e);
+      return false;
     }
-  };
+  }, [
+    localParticipant,
+    screenFps,
+    screenQuality,
+    screenShareMode,
+    someoneElseIsSharing,
+  ]);
+
+  const stopScreenShare = useCallback(async () => {
+    if (!localParticipant.isScreenShareEnabled) return true;
+
+    try {
+      await localParticipant.setScreenShareEnabled(false);
+      return true;
+    } catch (error) {
+      console.error("Failed to stop screen share", error);
+      return false;
+    }
+  }, [localParticipant]);
 
   const screenShare: ScreenShareState = {
+    activeParticipantId: activeSharingParticipant?.identity ?? null,
     iAmSharing,
     someoneElseIsSharing,
     sharerName,
@@ -109,6 +132,7 @@ export function useScreenShareState({
 
   return {
     screenShare,
-    toggleScreenShare,
+    startScreenShare,
+    stopScreenShare,
   };
 }

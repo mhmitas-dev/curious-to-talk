@@ -29,6 +29,10 @@ export interface ScreenShareAppSettings {
 
 export interface ScreenShareAppState extends ScreenShareAppSettings {
   screenShare: ScreenShareState;
+  stageError: string | null;
+  stageOccupied: boolean;
+  stageReady: boolean;
+  stageTransitioning: boolean;
   onToggleScreenShare: () => void | Promise<void>;
 }
 

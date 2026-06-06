@@ -19,7 +19,7 @@ export const ROOM_APPS: RoomAppModule[] = [
   {
     id: "youtube",
     label: "YouTube",
-    description: "Watch together later.",
+    description: "Watch together.",
     Icon: FaYoutube,
     render: ({ app }) => <PreviewApp app={app} />,
   },
