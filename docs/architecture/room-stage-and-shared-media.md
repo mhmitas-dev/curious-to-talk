@@ -4,7 +4,7 @@
 
 Every Niribi room has one visible stage. The stage is for live activity, not saved history. A room activity should feel closer to Screen Share than to a durable document: if the person hosting it leaves, the activity ends and the stage becomes free.
 
-The current production-grade stage behavior is Screen Share. YouTube is intentionally reset to a placeholder until it is rebuilt with a LiveKit-first session model.
+The current production-grade stage behavior is Screen Share plus an initial LiveKit-first YouTube host/viewer session model.
 
 ## Current Decision: YouTube Is Live Session State
 
@@ -12,7 +12,7 @@ YouTube should not use Supabase tables, Supabase Realtime, or database RPCs for 
 
 The previous Supabase-backed YouTube work is removed from the runtime because it made a temporary room activity behave like durable room state. That created unnecessary database load and confusing recovery behavior, especially after video end, refresh, and reconnect.
 
-The next YouTube implementation should use:
+The current YouTube implementation uses:
 
 - **LiveKit participant attributes** for the lightweight current host snapshot.
 - **LiveKit reliable data packets** for immediate commands such as start, pause, resume, seek, and end.
@@ -46,6 +46,7 @@ interface YouTubeHostSnapshot {
   videoId: string;
   playbackStatus: "playing" | "paused";
   positionSeconds: number;
+  revision: number;
   updatedAt: number;
 }
 ```
@@ -83,6 +84,14 @@ Shared YouTube state should live in the always-mounted room shell, not inside th
 
 Browser `localStorage` may be used only for local preferences such as volume, caption preference, or the last opened app page. It must not decide what the room is currently playing.
 
+Current runtime files:
+
+- `components/room/use-room-youtube-session.ts` owns the LiveKit session state, attributes, packets, and snapshot RPC.
+- `components/room/apps/youtube-app.tsx` starts or ends hosting from the Applications tab.
+- `components/room/stage/youtube-stage.tsx` and `components/room/stage/youtube-player.tsx` render the shared stage player.
+
+The player intentionally uses Niribi controls rather than YouTube native controls in this first version. This avoids mismatched local/native controls where a viewer pauses only their iframe while the shared room keeps playing.
+
 ## Database Boundary
 
 The database stage owner currently supports Screen Share only:
@@ -106,17 +115,14 @@ Screen Share rules:
 - If the sharer disappears from LiveKit presence, other clients may release stale stage ownership after the existing grace period.
 - Screen Share state remains warm in the room shell and is not owned by the Apps tab UI.
 
-## Rebuild Plan For YouTube
+## Future YouTube Work
 
-When we rebuild YouTube, start from a clean implementation:
+The first rebuild is intentionally small. Future work should proceed only after the host/viewer lifecycle is stable:
 
-1. Add a focused LiveKit YouTube session hook in the room shell.
-2. Register the snapshot RPC before or immediately after connecting.
-3. Read participant attributes on join to discover an active host.
-4. Add host-only start/end behavior from the YouTube app page.
-5. Add stage rendering for host and viewers.
-6. Add host-only commands through reliable data packets.
-7. Add viewer sync and late-join recovery.
-8. Test refresh, host leave, viewer join, mobile autoplay, and video end before adding queue or takeover behavior.
+1. Test refresh, host leave, viewer join, mobile autoplay, and video end.
+2. Decide whether YouTube native controls or captions are worth reintroducing.
+3. Add local-only preferences such as volume.
+4. Consider Screen Share takeover rules.
+5. Consider queueing only if it still fits the product.
 
-Keep the first rebuild intentionally small. The correct first version is one host, one video, viewer-only followers, and stage reset when the host leaves.
+Keep the model one host, one video, viewer-only followers, and stage reset when the host leaves.

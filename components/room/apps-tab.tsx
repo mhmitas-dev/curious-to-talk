@@ -10,6 +10,7 @@ import type {
 import type {
   RoomAppId,
   ScreenShareState,
+  YouTubeSessionSnapshot,
 } from "./room-types";
 
 interface AppsTabProps extends ScreenShareAppSettings {
@@ -22,6 +23,13 @@ interface AppsTabProps extends ScreenShareAppSettings {
   goAppsHome: () => void;
   onToggleScreenShare: () => void | Promise<void>;
   openApp: (appId: RoomAppId) => void;
+  youtubeDisabledReason: string | null;
+  youtubeError: string | null;
+  youtubeIsHost: boolean;
+  youtubeIsStarting: boolean;
+  youtubeSession: YouTubeSessionSnapshot | null;
+  onEndYouTube: () => void | Promise<void>;
+  onStartYouTube: (input: string) => Promise<"invalid" | "occupied" | "started" | "failed">;
 }
 
 export function AppsTab({
@@ -38,6 +46,13 @@ export function AppsTab({
   goAppsHome,
   onToggleScreenShare,
   openApp,
+  youtubeDisabledReason,
+  youtubeError,
+  youtubeIsHost,
+  youtubeIsStarting,
+  youtubeSession,
+  onEndYouTube,
+  onStartYouTube,
   setBufferTime,
   setScreenFps,
   setScreenQuality,
@@ -60,6 +75,16 @@ export function AppsTab({
       setScreenFps,
       setScreenQuality,
       setScreenShareMode,
+    },
+    youtubeApp: {
+      disabled: !!youtubeDisabledReason,
+      disabledReason: youtubeDisabledReason,
+      error: youtubeError,
+      isHost: youtubeIsHost,
+      isStarting: youtubeIsStarting,
+      session: youtubeSession,
+      onEnd: onEndYouTube,
+      onStart: onStartYouTube,
     },
   };
 

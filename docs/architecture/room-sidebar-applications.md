@@ -132,11 +132,11 @@ Screen-share settings are stored in local storage by `RoomChrome` and passed dow
 
 ### YouTube
 
-Status: placeholder. Runtime removed pending LiveKit-first rebuild.
+Status: initial LiveKit-first host/viewer runtime.
 
-Current renderer: `PreviewApp` through `components/room/apps/app-registry.tsx`
+Component: `components/room/apps/youtube-app.tsx`
 
-The current Applications launcher shows YouTube as a future app slot only. The previous Supabase-backed runtime was removed and should not be repaired.
+The Applications launcher opens a focused YouTube page with a link input. Starting a video makes the local participant the host and puts YouTube on the room stage until the host ends it or leaves the LiveKit room. The previous Supabase-backed runtime was removed and should not be repaired.
 
 The next YouTube implementation should follow the LiveKit-first session model documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
 
