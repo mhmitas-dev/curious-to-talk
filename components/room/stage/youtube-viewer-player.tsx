@@ -91,68 +91,67 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
 
   if (error) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center bg-card px-6 text-center text-sm text-muted-foreground">
+      <div className="absolute inset-0 flex items-center justify-center bg-card px-6 text-center text-sm text-muted-foreground">
         This video cannot be played here.
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-hidden bg-black md:rounded-xl">
-      <div className="relative aspect-video w-full bg-black">
-        <ReactPlayer
-          ref={playerRef}
-          src={`https://www.youtube.com/watch?v=${session.videoId}`}
-          playing={session.playbackStatus === "playing"}
-          // Viewer native controls are local comfort controls only.
-          // Do not add shared playback publishing from this component.
-          controls
-          width="100%"
-          height="100%"
-          playsInline
-          config={{
-            youtube: {
-              iv_load_policy: 3,
-              rel: 0,
-            },
-          }}
-          onReady={() => {
-            setError(false);
-            setIsReady(true);
-          }}
-          onPlaying={() => setNeedsGesture(false)}
-          onPause={correctToHost}
-          onSeeked={correctToHost}
-          onError={() => setError(true)}
-          fallback={
-            <div className="flex h-full w-full items-center justify-center bg-card text-sm text-muted-foreground">
-              Loading YouTube
-            </div>
-          }
-        />
-
-        {!needsGesture && session.playbackStatus === "buffering" && (
-          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
-            <div className="flex min-h-10 items-center gap-2 rounded-lg bg-card px-3 text-xs font-medium text-foreground shadow-sm">
-              <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" />
-              Waiting for host
-            </div>
+    <div className="absolute inset-0 bg-black">
+      <ReactPlayer
+        ref={playerRef}
+        className="h-full w-full"
+        src={`https://www.youtube.com/watch?v=${session.videoId}`}
+        playing={session.playbackStatus === "playing"}
+        // Viewer native controls are local comfort controls only.
+        // Do not add shared playback publishing from this component.
+        controls
+        width="100%"
+        height="100%"
+        playsInline
+        config={{
+          youtube: {
+            iv_load_policy: 3,
+            rel: 0,
+          },
+        }}
+        onReady={() => {
+          setError(false);
+          setIsReady(true);
+        }}
+        onPlaying={() => setNeedsGesture(false)}
+        onPause={correctToHost}
+        onSeeked={correctToHost}
+        onError={() => setError(true)}
+        fallback={
+          <div className="flex h-full w-full items-center justify-center bg-card text-sm text-muted-foreground">
+            Loading YouTube
           </div>
-        )}
+        }
+      />
 
-        {needsGesture && (
-          <button
-            type="button"
-            onClick={resumeLocalPlayback}
-            className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground"
-            aria-label="Join YouTube playback"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-              <Play className="ml-0.5 h-5 w-5" />
-            </span>
-          </button>
-        )}
-      </div>
+      {!needsGesture && session.playbackStatus === "buffering" && (
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+          <div className="flex min-h-10 items-center gap-2 rounded-lg bg-card px-3 text-xs font-medium text-foreground shadow-sm">
+            <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" />
+            Waiting for host
+          </div>
+        </div>
+      )}
+
+      {needsGesture && (
+        <button
+          type="button"
+          onClick={resumeLocalPlayback}
+          className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground"
+          aria-label="Join YouTube playback"
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <Play className="ml-0.5 h-5 w-5" />
+          </span>
+        </button>
+      )}
     </div>
   );
 }

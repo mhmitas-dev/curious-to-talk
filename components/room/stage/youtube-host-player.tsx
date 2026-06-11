@@ -103,78 +103,77 @@ export function YouTubeHostPlayer({
 
   if (error) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center bg-card px-6 text-center text-sm text-muted-foreground">
+      <div className="absolute inset-0 flex items-center justify-center bg-card px-6 text-center text-sm text-muted-foreground">
         This video cannot be played here.
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-hidden bg-black md:rounded-xl">
-      <div className="relative aspect-video w-full bg-black">
-        <ReactPlayer
-          ref={playerRef}
-          src={`https://www.youtube.com/watch?v=${session.videoId}`}
-          playing={session.playbackStatus !== "paused"}
-          controls
-          width="100%"
-          height="100%"
-          playsInline
-          config={{
-            youtube: {
-              iv_load_policy: 3,
-              rel: 0,
-            },
-          }}
-          onReady={() => {
-            setError(false);
-            setIsReady(true);
-          }}
-          onPlay={() => {
-            clearBufferingTimer();
+    <div className="absolute inset-0 bg-black">
+      <ReactPlayer
+        ref={playerRef}
+        className="h-full w-full"
+        src={`https://www.youtube.com/watch?v=${session.videoId}`}
+        playing={session.playbackStatus !== "paused"}
+        controls
+        width="100%"
+        height="100%"
+        playsInline
+        config={{
+          youtube: {
+            iv_load_policy: 3,
+            rel: 0,
+          },
+        }}
+        onReady={() => {
+          setError(false);
+          setIsReady(true);
+        }}
+        onPlay={() => {
+          clearBufferingTimer();
+          publishPlayerChange("play", "playing");
+        }}
+        onPlaying={() => {
+          clearBufferingTimer();
+          if (sessionRef.current.playbackStatus !== "playing") {
             publishPlayerChange("play", "playing");
-          }}
-          onPlaying={() => {
-            clearBufferingTimer();
-            if (sessionRef.current.playbackStatus !== "playing") {
-              publishPlayerChange("play", "playing");
-            }
-          }}
-          onPause={() => {
-            clearBufferingTimer();
-            if (!playerRef.current?.ended) {
-              publishPlayerChange("pause", "paused");
-            }
-          }}
-          onLoadStart={scheduleBuffering}
-          onStalled={scheduleBuffering}
-          onWaiting={scheduleBuffering}
-          onSeeking={() => {
-            clearBufferingTimer();
-            const targetPosition = getPlayerPosition();
-            const expectedHostPosition = getExpectedYouTubePosition(
-              sessionRef.current
-            );
-            if (
-              Math.abs(targetPosition - expectedHostPosition) >
-              HOST_SEEK_BROADCAST_THRESHOLD_SECONDS
-            ) {
-              publishPlayerChange("seek");
-            }
-          }}
-          onSeeked={() => publishPlayerChange("seek")}
-          onEnded={() => {
-            clearBufferingTimer();
-            void onEnd();
-          }}
-          onError={() => setError(true)}
-          fallback={
-            <div className="flex h-full w-full items-center justify-center bg-card text-sm text-muted-foreground">
-              Loading YouTube
-            </div>
           }
-        />
-      </div>
+        }}
+        onPause={() => {
+          clearBufferingTimer();
+          if (!playerRef.current?.ended) {
+            publishPlayerChange("pause", "paused");
+          }
+        }}
+        onLoadStart={scheduleBuffering}
+        onStalled={scheduleBuffering}
+        onWaiting={scheduleBuffering}
+        onSeeking={() => {
+          clearBufferingTimer();
+          const targetPosition = getPlayerPosition();
+          const expectedHostPosition = getExpectedYouTubePosition(
+            sessionRef.current
+          );
+          if (
+            Math.abs(targetPosition - expectedHostPosition) >
+            HOST_SEEK_BROADCAST_THRESHOLD_SECONDS
+          ) {
+            publishPlayerChange("seek");
+          }
+        }}
+        onSeeked={() => publishPlayerChange("seek")}
+        onEnded={() => {
+          clearBufferingTimer();
+          void onEnd();
+        }}
+        onError={() => setError(true)}
+        fallback={
+          <div className="flex h-full w-full items-center justify-center bg-card text-sm text-muted-foreground">
+            Loading YouTube
+          </div>
+        }
+      />
     </div>
   );
 }

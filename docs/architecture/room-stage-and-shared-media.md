@@ -6,7 +6,7 @@ Every Niribi room has one visible stage. The stage is for live activity, not sav
 
 The current stable stage behavior is **Screen Share**, plus a Phase 7 YouTube viewer-sync, recovery, buffering, and stage-clarity shell.
 
-The YouTube shell can create and end a room session over LiveKit, visibly occupy the stage, render React Player for the YouTube host, render read-only React Player playback for viewers, recover active session state for late-joining or refreshed viewers through bounded LiveKit state requests, pause viewers when the host is meaningfully buffering, and show a lightweight role/status cue on the stage. There is no Supabase table for active YouTube playback.
+The YouTube shell can create and end a room session over LiveKit, visibly occupy the stage, render React Player for the YouTube host, render React Player playback with local-only native controls for viewers, recover active session state for late-joining or refreshed viewers through bounded LiveKit state requests, pause viewers when the host is meaningfully buffering, and show a lightweight role/status cue on the stage. There is no Supabase table for active YouTube playback.
 
 ## Current Stage Contract
 
@@ -98,6 +98,13 @@ Phase 7 cleans up runtime boundaries and stage clarity:
 - Host, viewer, and LiveKit recovery code must use the same expected-position helper so drift and recovery calculations do not diverge.
 - The YouTube stage shows a small non-interactive status cue: `You host`, `Watching`, or `Waiting`.
 - The status cue is informational only. It must not become a control surface or a second playback UI.
+
+Stage sizing boundary:
+
+- `components/room/stage/stage-media-frame.tsx` owns the 16:9 media frame used by YouTube.
+- Stage surfaces must fit inside the room's available height; a media iframe must never decide the room height or push the participant panel down.
+- YouTube host and viewer player components fill the frame and own playback/events/overlays only. Do not reintroduce width-driven `aspect-video` wrappers inside those player components.
+- Screen Share remains a full-stage `object-contain` surface because it renders a LiveKit video track rather than a fixed 16:9 media app.
 
 Local native-controls pass:
 
@@ -275,10 +282,11 @@ Open design questions:
 ## Current Runtime Files
 
 - `components/room/stage/room-stage.tsx` chooses the current stage surface.
+- `components/room/stage/stage-media-frame.tsx` contains fixed-aspect media apps inside the available stage area.
 - `components/room/stage/screen-share-stage.tsx` renders the active Screen Share track.
 - `components/room/stage/youtube-activity-stage.tsx` renders the active YouTube stage surface.
 - `components/room/stage/youtube-host-player.tsx` renders React Player for the YouTube host.
-- `components/room/stage/youtube-viewer-player.tsx` renders read-only React Player for viewers.
+- `components/room/stage/youtube-viewer-player.tsx` renders React Player for viewers with local-only native controls and no shared publishing path.
 - `components/room/youtube-activity-utils.ts` owns shared YouTube timing helpers.
 - `components/room/use-room-stage-state.ts` coordinates the database-backed Screen Share stage state.
 - `components/room/use-room-youtube-activity.ts` coordinates the LiveKit-only YouTube lifecycle shell.

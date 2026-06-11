@@ -3,6 +3,7 @@ import type {
   YouTubePlaybackCommand,
   YouTubePlaybackStatus,
 } from "../room-types";
+import { StageMediaFrame } from "./stage-media-frame";
 import { YouTubeHostPlayer } from "./youtube-host-player";
 import { YouTubeViewerPlayer } from "./youtube-viewer-player";
 
@@ -27,26 +28,20 @@ export function YouTubeActivityStage({
 
   if (isHost) {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-sidebar md:p-4">
-        <div className="relative w-full max-w-6xl">
-          <YouTubeStatusBadge label={statusLabel} />
-          <YouTubeHostPlayer
-            session={session}
-            onEnd={onEnd}
-            onPlaybackChange={onHostPlaybackChange}
-          />
-        </div>
-      </div>
+      <StageMediaFrame badge={<YouTubeStatusBadge label={statusLabel} />}>
+        <YouTubeHostPlayer
+          session={session}
+          onEnd={onEnd}
+          onPlaybackChange={onHostPlaybackChange}
+        />
+      </StageMediaFrame>
     );
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-sidebar md:p-4">
-      <div className="relative w-full max-w-6xl">
-        <YouTubeStatusBadge label={statusLabel} />
-        <YouTubeViewerPlayer session={session} />
-      </div>
-    </div>
+    <StageMediaFrame badge={<YouTubeStatusBadge label={statusLabel} />}>
+      <YouTubeViewerPlayer session={session} />
+    </StageMediaFrame>
   );
 }
 
@@ -64,7 +59,7 @@ function getStatusLabel({
 
 function YouTubeStatusBadge({ label }: { label: string }) {
   return (
-    <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-lg bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-sm md:left-3 md:top-3">
+    <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-lg bg-card/50 px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-sm md:left-3 md:top-3">
       {label}
     </div>
   );
