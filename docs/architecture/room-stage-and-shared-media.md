@@ -96,7 +96,8 @@ Phase 7 cleans up runtime boundaries and stage clarity:
 
 - Shared YouTube position math lives in `components/room/youtube-activity-utils.ts`.
 - Host, viewer, and LiveKit recovery code must use the same expected-position helper so drift and recovery calculations do not diverge.
-- The YouTube stage shows a small non-interactive status cue: `You host`, `Watching`, or `Waiting`.
+- The YouTube stage shows a small non-interactive status cue: `You host`, `[name] is hosting`, or `Waiting for [name]`.
+- Host display names are resolved from LiveKit participant presence at render time; the playback packet still carries only the durable room identity.
 - The status cue is informational only. It must not become a control surface or a second playback UI.
 
 Stage sizing boundary:
@@ -114,7 +115,7 @@ Local native-controls pass:
 - This means the accepted host remains authoritative until they end YouTube, leave, or the session is cleared.
 - Simultaneous starts are intentionally not a collaborative/takeover feature; the first accepted active session wins and later competing sessions are ignored.
 - Phase 3 tunes viewer drift correction for native controls: viewer pause/seek events trigger local correction, and the fallback correction interval is short enough to feel intentional without adding network polling.
-- Phase 4 clarifies the viewer state cue: viewers see `Following host` so local snap-back behavior reads as intentional room sync.
+- Phase 4 clarifies the viewer state cue: viewers see who is hosting so local snap-back behavior reads as intentional room sync.
 - Phase 5 documents and verifies the boundary. Future work must preserve host-only publishing, viewer-local native controls, and drift correction after local viewer actions.
 
 ## Database Boundary

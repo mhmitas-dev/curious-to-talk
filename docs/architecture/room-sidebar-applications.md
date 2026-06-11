@@ -159,6 +159,10 @@ The YouTube app must still preserve these sidebar boundaries:
 
 The Applications page may own YouTube form state, validation messages, and app navigation. It must not be the only owner of an active YouTube room session. Once a user starts YouTube, the long-lived session owner belongs in the always-mounted room shell so switching sidebar tabs or closing the sidebar cannot stop or desynchronize playback.
 
+YouTube search is a local discovery feature, not shared room state. `lib/youtube/search-client.ts` calls the external search backend for metadata only, and `components/room/apps/youtube-app.tsx` owns the search query, loading, empty, error, and result UI locally. Search is button-triggered and aborts stale requests so older responses cannot overwrite newer searches.
+
+Selecting a search result feeds the existing YouTube start flow with the result's normal YouTube URL. It does not create a second playback path. The same Screen Share and active-YouTube stage rules apply to pasted links and search results. Search results must not be written to Supabase, broadcast over LiveKit, or treated as playback authority.
+
 Queueing, takeover, and collaborative controls must not be introduced until the simple host/viewer model is stable.
 
 ### Spotify
