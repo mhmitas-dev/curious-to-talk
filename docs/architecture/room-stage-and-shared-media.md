@@ -4,9 +4,9 @@
 
 Every Niribi room has one visible stage. The stage is for live activity, not saved history. A stage activity should feel temporary: if the person hosting it leaves, the activity can end and the stage can become free.
 
-The current stable stage behavior is **Screen Share**, plus a Phase 5 YouTube viewer-sync and recovery shell.
+The current stable stage behavior is **Screen Share**, plus a Phase 7 YouTube viewer-sync, recovery, buffering, and stage-clarity shell.
 
-The YouTube shell can create and end a room session over LiveKit, visibly occupy the stage, render React Player for the YouTube host, render read-only React Player playback for viewers, and recover active session state for late-joining or refreshed viewers through bounded LiveKit state requests. There is no Supabase table for active YouTube playback.
+The YouTube shell can create and end a room session over LiveKit, visibly occupy the stage, render React Player for the YouTube host, render read-only React Player playback for viewers, recover active session state for late-joining or refreshed viewers through bounded LiveKit state requests, pause viewers when the host is meaningfully buffering, and show a lightweight role/status cue on the stage. There is no Supabase table for active YouTube playback.
 
 ## Current Stage Contract
 
@@ -69,6 +69,8 @@ Phase 3 adds host playback only:
 Phase 4 adds viewer playback synchronization:
 
 - Host play, pause, and seek events publish LiveKit reliable packets.
+- Host playback commands read position and paused state from the React Player ref. Do not rely on synthetic event targets for YouTube iframe timing.
+- Meaningful host `seeking` jumps and completed `seeked` events are both treated as seek commands; duplicate same-position commands are suppressed before publishing.
 - Viewers render `components/room/stage/youtube-viewer-player.tsx`.
 - Viewer players are read-only and do not publish playback commands.
 - Viewer players use local drift correction only; they do not poll the network.
@@ -81,6 +83,20 @@ Phase 5 hardens recovery:
 - While recovery is pending, the YouTube app briefly disables new starts to avoid racing an existing host response.
 - If the YouTube host disappears from LiveKit presence, clients mark that session ended and clear the stage after the existing grace delay.
 - Ended session IDs remain locally ignored so delayed start, seek, or state-response packets cannot resurrect an ended video.
+
+Phase 6 adds conservative buffering polish:
+
+- Host buffering is shared only after a short debounce so brief YouTube iframe loading flickers do not move the whole room.
+- Host buffering does not pause the host's own player; it only publishes a `youtube:buffering` session snapshot.
+- Viewers treat host buffering as read-only wait state and pause at the host position until the host publishes play again.
+- Viewer buffering remains local and never publishes shared commands.
+
+Phase 7 cleans up runtime boundaries and stage clarity:
+
+- Shared YouTube position math lives in `components/room/youtube-activity-utils.ts`.
+- Host, viewer, and LiveKit recovery code must use the same expected-position helper so drift and recovery calculations do not diverge.
+- The YouTube stage shows a small non-interactive status cue: `You host`, `Watching`, or `Waiting`.
+- The status cue is informational only. It must not become a control surface or a second playback UI.
 
 ## Database Boundary
 
@@ -156,7 +172,6 @@ Authoritative host commands:
 - `youtube:pause`
 - `youtube:seek`
 - `youtube:buffering`
-- `youtube:resume`
 - `youtube:end`
 
 Viewer-to-host recovery command:
@@ -221,7 +236,7 @@ Buffering:
 
 - Host buffering may affect the shared room only after a short debounce.
 - Viewer buffering is local and must not affect the room.
-- The first implementation may defer buffering commands if play, pause, seek, end, join, and host-leave behavior are not stable yet.
+- Host buffering must not set the host player's `playing` prop to false; the host player should keep trying to play while viewers wait.
 
 ### Implementation Boundaries
 
@@ -232,7 +247,8 @@ The rebuild should proceed in small phases:
 3. Host React Player playback. **Complete.**
 4. Viewer synchronization. **Complete.**
 5. Join, refresh, leave, and end recovery. **Complete.**
-6. Buffering and mobile polish.
+6. Buffering and mobile polish. **Complete.**
+7. Runtime cleanup and stage clarity. **Complete.**
 
 Do not skip directly to a full player implementation. Stage ownership and host lifecycle must work before playback sync is introduced.
 
@@ -247,12 +263,13 @@ Open design questions:
 - `components/room/stage/room-stage.tsx` chooses the current stage surface.
 - `components/room/stage/screen-share-stage.tsx` renders the active Screen Share track.
 - `components/room/stage/youtube-activity-stage.tsx` renders the active YouTube stage surface.
-- `components/room/stage/youtube-host-player.tsx` renders React Player for the YouTube host in Phase 3.
+- `components/room/stage/youtube-host-player.tsx` renders React Player for the YouTube host.
 - `components/room/stage/youtube-viewer-player.tsx` renders read-only React Player for viewers.
+- `components/room/youtube-activity-utils.ts` owns shared YouTube timing helpers.
 - `components/room/use-room-stage-state.ts` coordinates the database-backed Screen Share stage state.
 - `components/room/use-room-youtube-activity.ts` coordinates the LiveKit-only YouTube lifecycle shell.
 - `components/room/use-screen-share-state.ts` owns LiveKit screen-share publishing and subscription state.
 - `components/room/apps/screen-share-app.tsx` renders Screen Share controls inside Applications.
 - `components/room/apps/youtube-app.tsx` renders the Phase 1 YouTube start/end shell inside Applications.
 
-Buffering and mobile polish are intentionally deferred to a later phase.
+Queueing, takeover, collaborative controls, and a custom YouTube control surface remain intentionally deferred.

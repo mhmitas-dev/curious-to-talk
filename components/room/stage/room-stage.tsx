@@ -4,6 +4,7 @@ import type {
   BufferTime,
   RoomStageOwner,
   YouTubeActivitySession,
+  YouTubePlaybackCommand,
   YouTubePlaybackStatus,
 } from "../room-types";
 import { IdleStage } from "./idle-stage";
@@ -17,7 +18,7 @@ interface RoomStageProps {
     isHost: boolean;
     onEnd: () => void | Promise<void>;
     onHostPlaybackChange: (
-      command: "pause" | "play" | "seek",
+      command: YouTubePlaybackCommand,
       playbackStatus: YouTubePlaybackStatus,
       positionSeconds: number
     ) => Promise<boolean>;

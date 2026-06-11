@@ -1,5 +1,6 @@
 import type {
   YouTubeActivitySession,
+  YouTubePlaybackCommand,
   YouTubePlaybackStatus,
 } from "../room-types";
 import { YouTubeHostPlayer } from "./youtube-host-player";
@@ -9,7 +10,7 @@ interface YouTubeActivityStageProps {
   isHost: boolean;
   onEnd: () => void | Promise<void>;
   onHostPlaybackChange: (
-    command: "pause" | "play" | "seek",
+    command: YouTubePlaybackCommand,
     playbackStatus: YouTubePlaybackStatus,
     positionSeconds: number
   ) => Promise<boolean>;
@@ -22,10 +23,13 @@ export function YouTubeActivityStage({
   onHostPlaybackChange,
   session,
 }: YouTubeActivityStageProps) {
+  const statusLabel = getStatusLabel({ isHost, session });
+
   if (isHost) {
     return (
       <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-sidebar md:p-4">
-        <div className="w-full max-w-6xl">
+        <div className="relative w-full max-w-6xl">
+          <YouTubeStatusBadge label={statusLabel} />
           <YouTubeHostPlayer
             session={session}
             onEnd={onEnd}
@@ -38,9 +42,30 @@ export function YouTubeActivityStage({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-sidebar md:p-4">
-      <div className="w-full max-w-6xl">
+      <div className="relative w-full max-w-6xl">
+        <YouTubeStatusBadge label={statusLabel} />
         <YouTubeViewerPlayer session={session} />
       </div>
+    </div>
+  );
+}
+
+function getStatusLabel({
+  isHost,
+  session,
+}: {
+  isHost: boolean;
+  session: YouTubeActivitySession;
+}) {
+  if (session.playbackStatus === "buffering") return "Waiting";
+  if (isHost) return "You host";
+  return "Watching";
+}
+
+function YouTubeStatusBadge({ label }: { label: string }) {
+  return (
+    <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-lg bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-sm md:left-3 md:top-3">
+      {label}
     </div>
   );
 }

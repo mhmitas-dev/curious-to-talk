@@ -6,14 +6,20 @@ import { RoomEvent } from "livekit-client";
 import { parseYouTubeVideoId } from "@/lib/youtube/parse-youtube-url";
 import type {
   YouTubeActivitySession,
+  YouTubePlaybackCommand,
   YouTubePlaybackStatus,
 } from "./room-types";
+import {
+  createFreshYouTubeSessionSnapshot,
+  getExpectedYouTubePosition,
+} from "./youtube-activity-utils";
 
 type StartResult = "failed" | "invalid" | "occupied" | "started";
 
 type YouTubeActivityPacket =
   | {
       type:
+        | "youtube:buffering"
         | "youtube:pause"
         | "youtube:play"
         | "youtube:seek"
@@ -90,6 +96,7 @@ function parsePacket(payload: Uint8Array) {
     if (!isObject(packet) || typeof packet.type !== "string") return null;
 
     if (
+      packet.type === "youtube:buffering" ||
       packet.type === "youtube:pause" ||
       packet.type === "youtube:play" ||
       packet.type === "youtube:seek" ||
@@ -150,26 +157,6 @@ function createId(prefix: string) {
       : Math.random().toString(36).slice(2);
 
   return `${prefix}-${Date.now().toString(36)}-${random}`;
-}
-
-function getExpectedPosition(session: YouTubeActivitySession, now = Date.now()) {
-  if (session.playbackStatus !== "playing") {
-    return Math.max(0, session.positionSeconds);
-  }
-
-  return Math.max(
-    0,
-    session.positionSeconds + Math.max(0, now - session.updatedAt) / 1_000
-  );
-}
-
-function createFreshSessionSnapshot(session: YouTubeActivitySession) {
-  const now = Date.now();
-  return {
-    ...session,
-    positionSeconds: getExpectedPosition(session, now),
-    updatedAt: now,
-  } satisfies YouTubeActivitySession;
 }
 
 function shouldReplaceSession(
@@ -364,17 +351,16 @@ export function useRoomYouTubeActivity({
 
   const updateHostPlayback = useCallback(
     async (
-      command: "pause" | "play" | "seek",
+      command: YouTubePlaybackCommand,
       playbackStatus: YouTubePlaybackStatus,
       positionSeconds: number
     ) => {
       const current = sessionRef.current;
       if (!current || current.hostIdentity !== userId) return false;
 
-      const expectedPosition = getExpectedPosition(current);
+      const expectedPosition = getExpectedYouTubePosition(current);
       const nextPosition = Math.max(0, positionSeconds);
       if (
-        command !== "seek" &&
         current.playbackStatus === playbackStatus &&
         Math.abs(expectedPosition - nextPosition) < POSITION_EPSILON_SECONDS
       ) {
@@ -436,6 +422,7 @@ export function useRoomYouTubeActivity({
       if (!packet) return;
 
       if (
+        packet.type === "youtube:buffering" ||
         packet.type === "youtube:pause" ||
         packet.type === "youtube:play" ||
         packet.type === "youtube:seek" ||
@@ -462,7 +449,7 @@ export function useRoomYouTubeActivity({
       if (packet.type === "youtube:state-request") {
         const current = sessionRef.current;
         if (!current || current.hostIdentity !== userId) return;
-        const freshSession = createFreshSessionSnapshot(current);
+        const freshSession = createFreshYouTubeSessionSnapshot(current);
         applySession(freshSession);
 
         void publishPacket(

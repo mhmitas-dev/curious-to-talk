@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Play } from "lucide-react";
+import { LoaderCircle, Play } from "lucide-react";
 import ReactPlayer from "react-player";
 import type { YouTubeActivitySession } from "../room-types";
+import { getExpectedYouTubePosition } from "../youtube-activity-utils";
 
 interface YouTubeViewerPlayerProps {
   session: YouTubeActivitySession;
@@ -11,17 +12,6 @@ interface YouTubeViewerPlayerProps {
 
 const DRIFT_CHECK_MS = 3_000;
 const DRIFT_THRESHOLD_SECONDS = 1.5;
-
-function expectedPosition(session: YouTubeActivitySession, now = Date.now()) {
-  if (session.playbackStatus !== "playing") {
-    return Math.max(0, session.positionSeconds);
-  }
-
-  return Math.max(
-    0,
-    session.positionSeconds + Math.max(0, now - session.updatedAt) / 1_000
-  );
-}
 
 export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
   const playerRef = useRef<HTMLVideoElement | null>(null);
@@ -38,7 +28,7 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
     const player = playerRef.current;
     if (!isReady || !player) return;
 
-    const targetPosition = expectedPosition(session);
+    const targetPosition = getExpectedYouTubePosition(session);
     if (Math.abs(player.currentTime - targetPosition) > DRIFT_THRESHOLD_SECONDS) {
       player.currentTime = targetPosition;
     }
@@ -66,7 +56,7 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
       const currentSession = sessionRef.current;
       if (!player) return;
 
-      const targetPosition = expectedPosition(currentSession);
+      const targetPosition = getExpectedYouTubePosition(currentSession);
 
       if (
         currentSession.playbackStatus === "playing" &&
@@ -143,6 +133,15 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
             className="absolute inset-0 cursor-default"
             aria-hidden="true"
           />
+        )}
+
+        {!needsGesture && session.playbackStatus === "buffering" && (
+          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+            <div className="flex min-h-10 items-center gap-2 rounded-lg bg-card px-3 text-xs font-medium text-foreground shadow-sm">
+              <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" />
+              Waiting for host
+            </div>
+          </div>
         )}
 
         {needsGesture && (
