@@ -159,7 +159,7 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${random}`;
 }
 
-function shouldReplaceSession(
+function shouldApplySessionPacket(
   current: YouTubeActivitySession | null,
   candidate: YouTubeActivitySession
 ) {
@@ -169,7 +169,9 @@ function shouldReplaceSession(
     return candidate.revision >= current.revision;
   }
 
-  return candidate.sessionId < current.sessionId;
+  // Once a session is active, only that session's host remains authoritative.
+  // Viewer/local-control packets or stale competing sessions must not take over.
+  return false;
 }
 
 export function useRoomYouTubeActivity({
@@ -231,7 +233,9 @@ export function useRoomYouTubeActivity({
         endedSessionIdsRef.current.add(candidate.sessionId);
         return;
       }
-      if (!shouldReplaceSession(sessionRef.current, candidate)) return;
+      if (!shouldApplySessionPacket(sessionRef.current, candidate)) {
+        return;
+      }
 
       clearRecoveryTimers();
       setError(null);

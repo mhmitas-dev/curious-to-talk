@@ -59,7 +59,7 @@ function getStatusLabel({
 }) {
   if (session.playbackStatus === "buffering") return "Waiting";
   if (isHost) return "You host";
-  return "Watching";
+  return "Following host";
 }
 
 function YouTubeStatusBadge({ label }: { label: string }) {

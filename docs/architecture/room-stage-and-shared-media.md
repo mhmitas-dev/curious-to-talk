@@ -72,7 +72,8 @@ Phase 4 adds viewer playback synchronization:
 - Host playback commands read position and paused state from the React Player ref. Do not rely on synthetic event targets for YouTube iframe timing.
 - Meaningful host `seeking` jumps and completed `seeked` events are both treated as seek commands; duplicate same-position commands are suppressed before publishing.
 - Viewers render `components/room/stage/youtube-viewer-player.tsx`.
-- Viewer players are read-only and do not publish playback commands.
+- Viewer players expose native YouTube controls for local comfort, but they do not publish playback commands.
+- If a viewer locally pauses, plays, or seeks, drift correction pulls them back to the host's shared state shortly after.
 - Viewer players use local drift correction only; they do not poll the network.
 - Delayed packets for ended sessions are still ignored so `youtube:end` remains terminal.
 
@@ -97,6 +98,17 @@ Phase 7 cleans up runtime boundaries and stage clarity:
 - Host, viewer, and LiveKit recovery code must use the same expected-position helper so drift and recovery calculations do not diverge.
 - The YouTube stage shows a small non-interactive status cue: `You host`, `Watching`, or `Waiting`.
 - The status cue is informational only. It must not become a control surface or a second playback UI.
+
+Local native-controls pass:
+
+- Phase 1 exposes native YouTube controls to viewers for local comfort.
+- Viewer native controls remain local only; the viewer player still has no path to publish LiveKit playback commands.
+- Phase 2 hardens the LiveKit receiver: once a YouTube session exists, packets for another session are ignored instead of replacing the active host.
+- This means the accepted host remains authoritative until they end YouTube, leave, or the session is cleared.
+- Simultaneous starts are intentionally not a collaborative/takeover feature; the first accepted active session wins and later competing sessions are ignored.
+- Phase 3 tunes viewer drift correction for native controls: viewer pause/seek events trigger local correction, and the fallback correction interval is short enough to feel intentional without adding network polling.
+- Phase 4 clarifies the viewer state cue: viewers see `Following host` so local snap-back behavior reads as intentional room sync.
+- Phase 5 documents and verifies the boundary. Future work must preserve host-only publishing, viewer-local native controls, and drift correction after local viewer actions.
 
 ## Database Boundary
 
@@ -182,7 +194,9 @@ Host-to-viewer recovery response:
 
 - `youtube:state-response`
 
-Only the current YouTube host may publish authoritative playback commands. Viewers may request state, but viewer player events must never publish shared play, pause, seek, buffering, resume, or end commands.
+Only the current YouTube host may publish authoritative playback commands. Viewers may request state, and may interact with their native player controls locally, but viewer player events must never publish shared play, pause, seek, buffering, resume, or end commands.
+
+Once a client has accepted a YouTube session, it must ignore packets for a different YouTube session ID. This prevents local viewer actions, stale packets, or competing hosts from replacing the active room host.
 
 The payload should include at minimum:
 
@@ -273,3 +287,18 @@ Open design questions:
 - `components/room/apps/youtube-app.tsx` renders the Phase 1 YouTube start/end shell inside Applications.
 
 Queueing, takeover, collaborative controls, and a custom YouTube control surface remain intentionally deferred.
+
+## Local Native Controls Verification
+
+Use this checklist when changing YouTube viewer controls:
+
+- Host play, pause, seek, buffering, and end still publish shared LiveKit commands.
+- Host volume, mute, captions, fullscreen, quality, and YouTube settings remain local.
+- Viewer native controls are visible and usable.
+- Viewer volume, mute, captions, fullscreen, quality, and YouTube settings remain local.
+- Viewer play, pause, and seek never publish LiveKit commands.
+- Viewer local pause while the host is playing is corrected back to host playback.
+- Viewer local seek is corrected back to the host position.
+- Viewer local play while the host is paused is corrected back to paused.
+- Viewer drift correction stays local; it must not become database writes, participant attributes, or high-frequency network packets.
+- The stage badge says `Following host` for viewers so snap-back behavior is understandable.

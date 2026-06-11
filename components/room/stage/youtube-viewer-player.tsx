@@ -10,7 +10,7 @@ interface YouTubeViewerPlayerProps {
   session: YouTubeActivitySession;
 }
 
-const DRIFT_CHECK_MS = 3_000;
+const DRIFT_CHECK_MS = 2_000;
 const DRIFT_THRESHOLD_SECONDS = 1.5;
 
 export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
@@ -23,6 +23,27 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  const correctToHost = () => {
+    const player = playerRef.current;
+    const currentSession = sessionRef.current;
+    if (!player) return;
+
+    const targetPosition = getExpectedYouTubePosition(currentSession);
+
+    if (Math.abs(player.currentTime - targetPosition) > DRIFT_THRESHOLD_SECONDS) {
+      player.currentTime = targetPosition;
+    }
+
+    if (currentSession.playbackStatus === "playing" && player.paused) {
+      void player.play().catch(() => setNeedsGesture(true));
+      return;
+    }
+
+    if (currentSession.playbackStatus !== "playing" && !player.paused) {
+      player.pause();
+    }
+  };
 
   useEffect(() => {
     const player = playerRef.current;
@@ -52,28 +73,7 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
     if (!isReady) return;
 
     const timer = window.setInterval(() => {
-      const player = playerRef.current;
-      const currentSession = sessionRef.current;
-      if (!player) return;
-
-      const targetPosition = getExpectedYouTubePosition(currentSession);
-
-      if (
-        currentSession.playbackStatus === "playing" &&
-        (player.paused ||
-          Math.abs(player.currentTime - targetPosition) > DRIFT_THRESHOLD_SECONDS)
-      ) {
-        player.currentTime = targetPosition;
-        void player.play().catch(() => setNeedsGesture(true));
-        return;
-      }
-
-      if (
-        currentSession.playbackStatus !== "playing" &&
-        Math.abs(player.currentTime - targetPosition) > DRIFT_THRESHOLD_SECONDS
-      ) {
-        player.currentTime = targetPosition;
-      }
+      correctToHost();
     }, DRIFT_CHECK_MS);
 
     return () => window.clearInterval(timer);
@@ -104,13 +104,14 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
           ref={playerRef}
           src={`https://www.youtube.com/watch?v=${session.videoId}`}
           playing={session.playbackStatus === "playing"}
-          controls={false}
+          // Viewer native controls are local comfort controls only.
+          // Do not add shared playback publishing from this component.
+          controls
           width="100%"
           height="100%"
           playsInline
           config={{
             youtube: {
-              disablekb: 1,
               iv_load_policy: 3,
               rel: 0,
             },
@@ -120,6 +121,8 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
             setIsReady(true);
           }}
           onPlaying={() => setNeedsGesture(false)}
+          onPause={correctToHost}
+          onSeeked={correctToHost}
           onError={() => setError(true)}
           fallback={
             <div className="flex h-full w-full items-center justify-center bg-card text-sm text-muted-foreground">
@@ -127,13 +130,6 @@ export function YouTubeViewerPlayer({ session }: YouTubeViewerPlayerProps) {
             </div>
           }
         />
-
-        {!needsGesture && (
-          <div
-            className="absolute inset-0 cursor-default"
-            aria-hidden="true"
-          />
-        )}
 
         {!needsGesture && session.playbackStatus === "buffering" && (
           <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
