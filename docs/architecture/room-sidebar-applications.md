@@ -163,6 +163,8 @@ YouTube search is a local discovery feature, not shared room state. `lib/youtube
 
 Selecting a search result feeds the existing YouTube start flow with the result's normal YouTube URL. It does not create a second playback path. The same Screen Share and active-YouTube stage rules apply to pasted links and search results. Search results must not be written to Supabase, broadcast over LiveKit, or treated as playback authority.
 
+Search remains available while YouTube is already on stage so users can look around without changing the room. During an active stage session, result playback actions stay disabled until the current activity ends.
+
 Queueing, takeover, and collaborative controls must not be introduced until the simple host/viewer model is stable.
 
 ### Spotify

@@ -132,9 +132,6 @@ export function YouTubeApp({
   };
 
   const title = session ? "YouTube is on stage" : "Play YouTube";
-  const description = session
-    ? "The host controls playback for everyone in the room."
-    : "Paste a YouTube link to watch together in this room.";
   const status = session
     ? isHost
       ? "You are the host"
@@ -146,7 +143,7 @@ export function YouTubeApp({
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
       <div className="rounded-xl bg-card p-4 shadow-sm">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           <div
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
               session
@@ -156,116 +153,118 @@ export function YouTubeApp({
           >
             <FaYoutube className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground">{title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-            <p className="mt-3 text-xs font-medium text-primary">{status}</p>
+            <p className="mt-1 text-xs font-medium text-primary">{status}</p>
           </div>
+
+          {session && isHost && (
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="shrink-0"
+              onClick={() => void onEnd()}
+              aria-label="End YouTube"
+            >
+              <Square data-icon="inline-start" />
+              End
+            </Button>
+          )}
         </div>
       </div>
 
-      {!session && (
-        <div className="flex flex-col gap-4">
-          <form onSubmit={submitSearch} className="space-y-3">
-            <label className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-primary">Search YouTube</span>
-              <div className="flex gap-2">
-                <Input
-                  type="search"
-                  value={searchInput}
-                  onChange={(event) => {
-                    setSearchInput(event.target.value);
-                    if (searchError) setSearchError(null);
-                  }}
-                  placeholder="Search videos"
-                  className="h-10 bg-background"
-                  disabled={searchStatus === "loading"}
-                  aria-invalid={searchStatus === "error"}
-                />
-                <Button
-                  type="submit"
-                  size="icon-lg"
-                  disabled={searchStatus === "loading" || !searchInput.trim()}
-                  aria-label="Search YouTube"
-                >
-                  {searchStatus === "loading" ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </label>
-          </form>
-
-          <SearchResults
-            disabled={disabled || isStarting || !!startingResultId}
-            results={searchResults}
-            onPlayResult={playSearchResult}
-            startingResultId={startingResultId}
-            status={searchStatus}
-            error={searchError}
-          />
-
-          <div className="relative flex items-center justify-center">
-            <span className="h-px flex-1 bg-border" />
-            <span className="px-3 text-[10px] font-semibold uppercase text-muted-foreground">
-              or paste link
-            </span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={submit} className="space-y-3">
-            <label className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-primary">Video link</span>
+      <div className="flex flex-col gap-4">
+        <form onSubmit={submitSearch} className="space-y-3">
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-primary">Search YouTube</span>
+            <div className="flex gap-2">
               <Input
-                type="url"
-                inputMode="url"
-                value={input}
+                type="search"
+                value={searchInput}
                 onChange={(event) => {
-                  setInput(event.target.value);
-                  if (error) setError(null);
+                  setSearchInput(event.target.value);
+                  if (searchError) setSearchError(null);
                 }}
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="Search videos"
                 className="h-10 bg-background"
-                disabled={disabled || isStarting}
-                aria-invalid={!!error}
+                disabled={searchStatus === "loading"}
+                aria-invalid={searchStatus === "error"}
               />
-            </label>
+              <Button
+                type="submit"
+                size="icon-lg"
+                disabled={searchStatus === "loading" || !searchInput.trim()}
+                aria-label="Search YouTube"
+              >
+                {searchStatus === "loading" ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </label>
+        </form>
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full"
-              disabled={disabled || isStarting || !input.trim()}
-            >
-              <Play data-icon="inline-start" />
-              {isStarting ? "Starting" : "Play"}
-            </Button>
-          </form>
-        </div>
-      )}
+        <SearchResults
+          disabled={disabled || isStarting || !!session || !!startingResultId}
+          results={searchResults}
+          onPlayResult={playSearchResult}
+          startingResultId={startingResultId}
+          status={searchStatus}
+          error={searchError}
+        />
+
+        {!session && (
+          <>
+            <div className="relative flex items-center justify-center">
+              <span className="h-px flex-1 bg-border" />
+              <span className="px-3 text-[10px] font-semibold uppercase text-muted-foreground">
+                or paste link
+              </span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
+            <form onSubmit={submit} className="space-y-3">
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-medium text-primary">
+                  Video link
+                </span>
+                <Input
+                  type="url"
+                  inputMode="url"
+                  value={input}
+                  onChange={(event) => {
+                    setInput(event.target.value);
+                    if (error) setError(null);
+                  }}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="h-10 bg-background"
+                  disabled={disabled || isStarting}
+                  aria-invalid={!!error}
+                />
+              </label>
+
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={disabled || isStarting || !input.trim()}
+              >
+                <Play data-icon="inline-start" />
+                {isStarting ? "Starting" : "Play"}
+              </Button>
+            </form>
+          </>
+        )}
+      </div>
 
       {session && (
         <div className="rounded-xl bg-card p-4 text-xs leading-relaxed text-muted-foreground shadow-sm">
           <p className="font-medium text-foreground">Video ID</p>
           <p className="mt-1 break-all">{session.videoId}</p>
         </div>
-      )}
-
-      {session && isHost && (
-        <Button
-          type="button"
-          size="lg"
-          variant="secondary"
-          className="w-full"
-          onClick={() => void onEnd()}
-        >
-          <Square data-icon="inline-start" />
-          End YouTube
-        </Button>
       )}
 
       {disabledReason && (
