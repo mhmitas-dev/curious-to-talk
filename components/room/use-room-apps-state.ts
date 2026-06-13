@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useReducer } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import type { RoomAppId, RoomAppSession } from "./room-types";
 
 type RoomAppSessions = Partial<Record<RoomAppId, RoomAppSession>>;
@@ -88,8 +88,17 @@ export function useRoomAppsState() {
     dispatch({ type: "close", appId });
   }, []);
 
+  const visitedAppIds = useMemo(
+    () =>
+      Object.values(state.sessions)
+        .filter((session): session is RoomAppSession => Boolean(session))
+        .map((session) => session.id),
+    [state.sessions]
+  );
+
   return {
     ...state,
+    visitedAppIds,
     openApp,
     goAppsHome,
     closeApp,

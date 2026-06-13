@@ -262,7 +262,9 @@ function RoomChrome({
             }
             stageReady={!roomStage.isLoading && !!roomStage.stage}
             stageTransitioning={roomStage.isTransitioning}
+            visible={sidebarOpen && sidebarTab === "apps"}
             openApp={roomApps.openApp}
+            visitedAppIds={roomApps.visitedAppIds}
             youtubeDisabledReason={
               roomStage.owner === "screenShare"
                 ? "Screen Share is currently using the stage."

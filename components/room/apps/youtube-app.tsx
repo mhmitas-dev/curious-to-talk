@@ -1,6 +1,12 @@
 "use client";
 
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useParticipants } from "@livekit/components-react";
 import { Clock, LoaderCircle, Play, Search, Square } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
@@ -42,6 +48,7 @@ export function YouTubeApp({
   isRequestingHandoff,
   isReplacing,
   isStarting,
+  visible,
   session,
   onEnd,
   onPlay,
@@ -58,6 +65,7 @@ export function YouTubeApp({
   const [pendingHandoff, setPendingHandoff] =
     useState<PendingHandoffSelection | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchResultsRef = useRef<YouTubeSearchResult[]>([]);
   const hostParticipant = session
     ? participants.find(
         (participant) => participant.identity === session.hostIdentity
@@ -72,6 +80,23 @@ export function YouTubeApp({
       abortControllerRef.current?.abort();
     };
   }, []);
+
+  useLayoutEffect(() => {
+    if (!visible) return;
+
+    return () => {
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+      setPendingHandoff(null);
+      setSearchStatus((current) =>
+        current === "loading"
+          ? searchResultsRef.current.length > 0
+            ? "ready"
+            : "idle"
+          : current
+      );
+    };
+  }, [visible]);
 
   const playVideo = async (value: string, invalidMessage: string) => {
     if (disabled || playbackActionPending) return;
@@ -164,6 +189,7 @@ export function YouTubeApp({
     const query = searchInput.trim();
     if (!query) {
       setSearchError("Search for a video or artist.");
+      searchResultsRef.current = [];
       setSearchResults([]);
       setSearchStatus("idle");
       return;
@@ -184,6 +210,7 @@ export function YouTubeApp({
 
       if (abortController.signal.aborted) return;
 
+      searchResultsRef.current = response.results;
       setSearchResults(response.results);
       setSearchStatus("ready");
       if (response.results.length === 0) {
@@ -193,6 +220,7 @@ export function YouTubeApp({
       if (abortController.signal.aborted) return;
 
       console.error("Failed to search YouTube", searchError);
+      searchResultsRef.current = [];
       setSearchResults([]);
       setSearchStatus("error");
       setSearchError("YouTube search is unavailable right now.");

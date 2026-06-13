@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLauncher } from "./apps/app-launcher";
-import { getRoomApp } from "./apps/app-registry";
+import { getRoomApp, ROOM_APPS } from "./apps/app-registry";
 import { AppsWorkspaceHeader } from "./apps/apps-workspace-header";
 import type {
   RoomAppRenderContext,
@@ -22,9 +22,11 @@ interface AppsTabProps extends ScreenShareAppSettings {
   stageOccupied: boolean;
   stageReady: boolean;
   stageTransitioning: boolean;
+  visible: boolean;
   goAppsHome: () => void;
   onToggleScreenShare: () => void | Promise<void>;
   openApp: (appId: RoomAppId) => void;
+  visitedAppIds: readonly RoomAppId[];
   youtubeDisabledReason: string | null;
   youtubeError: string | null;
   youtubeIsHost: boolean;
@@ -49,9 +51,11 @@ export function AppsTab({
   stageOccupied,
   stageReady,
   stageTransitioning,
+  visible,
   goAppsHome,
   onToggleScreenShare,
   openApp,
+  visitedAppIds,
   youtubeDisabledReason,
   youtubeError,
   youtubeIsHost,
@@ -97,12 +101,16 @@ export function AppsTab({
       isRequestingHandoff: youtubeIsRequestingHandoff,
       isReplacing: youtubeIsReplacing,
       isStarting: youtubeIsStarting,
+      visible: visible && selectedApp?.id === "youtube",
       session: youtubeSession,
       onEnd: onEndYouTube,
       onPlay: onPlayYouTube,
       onRequestHandoff: onRequestYouTubeHandoff,
     },
   };
+  const visitedKeepAliveApps = ROOM_APPS.filter(
+    (app) => app.keepAlive && visitedAppIds.includes(app.id)
+  );
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -111,11 +119,30 @@ export function AppsTab({
         onGoHome={goAppsHome}
       />
 
-      {selectedApp ? (
-        selectedApp.render({ ...appContext, app: selectedApp })
-      ) : (
+      <div
+        aria-hidden={!!selectedApp}
+        className={selectedApp ? "hidden" : "flex h-full flex-col"}
+      >
         <AppLauncher appContext={appContext} onOpenApp={openApp} />
-      )}
+      </div>
+
+      {visitedKeepAliveApps.map((app) => (
+        <div
+          key={app.id}
+          aria-hidden={selectedApp?.id !== app.id}
+          className={
+            selectedApp?.id === app.id
+              ? "flex h-full flex-col"
+              : "hidden"
+          }
+        >
+          {app.render({ ...appContext, app })}
+        </div>
+      ))}
+
+      {selectedApp && !selectedApp.keepAlive
+        ? selectedApp.render({ ...appContext, app: selectedApp })
+        : null}
     </div>
   );
 }

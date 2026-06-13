@@ -30,20 +30,25 @@ The header does not expose a last-used app shortcut. Apps are reopened from the 
 
 Returning to the launcher does not end or reset an app. Switching to another sidebar tab also does not reset the current Applications page.
 
-## Important Design Decision: Remember State, Do Not Keep Every App Mounted
+## Important Design Decision: Remember By Default, Keep Alive By Exception
 
-Applications uses remembered workspace state rather than keeping all app components mounted.
+Applications uses remembered workspace state by default. An app may explicitly opt into UI retention when preserving its local interface gives a clear user benefit and its hidden footprint remains small.
 
 This distinction matters:
 
-- The active app and last-used app remain known when the Applications tab unmounts.
-- Inactive app UI does not remain mounted merely to preserve navigation.
+- The active app, last-used app, and visited app IDs remain known for the room session.
+- `RoomSidebar` preserves the Applications workspace across top-level tab switches with an ordinary hidden DOM panel.
+- `AppsTab` preserves only visited app modules whose registry entry declares `keepAlive: true`.
+- Hidden keep-alive panels preserve React state and DOM state, including form drafts and scroll position. App visibility is passed explicitly so each retained app can stop only the transient work that should not continue while hidden.
+- Inactive app UI does not remain mounted merely because it is registered. Non-opt-in apps keep the normal mount/unmount behavior.
 - Realtime or media state that must stay alive belongs above the tab UI in the always-mounted room shell or in a dedicated service/hook.
-- An app can later persist its own lightweight page state when needed.
+- Keep-alive is session-scoped UI retention, not browser or database persistence. Refreshing or leaving the room resets it.
 
-This keeps mobile resource usage predictable while allowing users to return to an app where they left it.
+This keeps mobile resource usage predictable while allowing selected lightweight apps to return exactly where the user left them.
 
-Do not solve app persistence by mounting every app indefinitely. An app that needs background playback or a continuous room session should explicitly move that lifecycle into an always-mounted owner.
+Do not solve app persistence by mounting every app indefinitely. An app that needs background playback or a continuous room session must still move that lifecycle into an always-mounted room owner; `keepAlive` is not permission to hide a media or realtime service inside app UI.
+
+React `Activity` is intentionally not used for this workspace. Its hidden mode deactivates all descendant effects. That broad lifecycle behavior caused a YouTube playback regression in an app surface that consumes LiveKit-aware hooks. Niribi instead keeps the small UI tree mounted and controls visibility explicitly, leaving stage playback and LiveKit ownership untouched.
 
 ## Ownership Boundaries
 
@@ -66,7 +71,7 @@ Room-wide realtime or media state should remain here or in hooks called here. Ap
 
 Location: `components/room/room-sidebar.tsx`
 
-`RoomSidebar` is shell-only. It handles the sidebar frame, top-level tab controls, close behavior, unread badges, and rendering the supplied tab content.
+`RoomSidebar` is shell-only. It handles the sidebar frame, top-level tab controls, close behavior, unread badges, and rendering the supplied tab content. It keeps the supplied Applications workspace in a hidden DOM panel so switching top-level tabs does not destroy retained app UI.
 
 It must not become the owner of LiveKit, direct-message, or app-specific business state.
 
@@ -79,7 +84,8 @@ Location: `components/room/apps-tab.tsx`
 - resolves the current app from the registry;
 - builds the app render context from room-owned state;
 - renders the workspace header;
-- renders either the launcher or the selected app.
+- renders the launcher, selected normal app, and visited keep-alive app surfaces;
+- switches between ordinary hidden panels for the launcher and visited retained apps without keeping every registered app mounted.
 
 It is controlled by `RoomChrome`; it does not own the persistent navigation state itself.
 
@@ -92,6 +98,7 @@ This hook owns session-scoped Applications navigation:
 - `activeApp` - app currently visible, or `null` for the launcher;
 - `lastActiveApp` - most recently opened app;
 - `sessions` - lightweight remembered state for registered apps;
+- `visitedAppIds` - app IDs that have been opened during the current room session;
 - `openApp(appId)` - opens or returns to an app;
 - `goAppsHome()` - returns to the launcher without clearing app state;
 - `closeApp(appId)` - clears an app session when an explicit end/close flow is introduced.
@@ -108,6 +115,7 @@ Location: `components/room/apps/app-registry.tsx`
 - label and description metadata;
 - a `react-icons` icon;
 - an optional active-state predicate;
+- an optional `keepAlive` UI-retention policy;
 - a render function.
 
 The launcher and workspace must use the registry rather than duplicating app lists or app-specific branching.
@@ -161,6 +169,8 @@ The Applications page may own YouTube form state, validation messages, and app n
 
 YouTube search is a local discovery feature, not shared room state. `lib/youtube/search-client.ts` calls the external search backend for metadata only, and `components/room/apps/youtube-app.tsx` owns the search query, loading, empty, error, and result UI locally. Search is button-triggered and aborts stale requests so older responses cannot overwrite newer searches.
 
+YouTube declares `keepAlive: true`. After the user opens it once, switching sidebar tabs or returning to the Applications launcher preserves its query, results, pasted-link draft, and scroll position. Hiding YouTube aborts an in-flight search, restores the last stable result state, and closes transient handoff confirmation UI. It does not repeat the search automatically when shown again. This retained state ends with the current room page and is never written to local storage, Supabase, or LiveKit.
+
 Selecting a search result feeds the same YouTube play command used by pasted links. It does not create a second playback path. Search results must not be written to Supabase or treated as playback authority; only the selected video ID enters the LiveKit activity protocol.
 
 Search remains available while YouTube is already on stage so users can look around without changing the room. The current host may select another result or paste another link to replace their own active video. A viewer may select a result or paste a link, but must confirm that the current video will end and that they will become the host before the room-owned handoff API is called. Screen Share continues to block all YouTube starts and replacements.
@@ -183,7 +193,7 @@ When adding a new room app:
 2. Create its focused component under `components/room/apps/`.
 3. Register its metadata and renderer in `ROOM_APPS`.
 4. Add only the state contract the app actually needs.
-5. Decide which state is page-local, remembered, room-wide, realtime, or persistent.
+5. Decide which state is page-local, remembered, selectively kept alive, room-wide, realtime, or persistent.
 6. Keep long-lived media/realtime work outside conditionally mounted app pages.
 7. Verify launcher, app header, tab switching, sidebar closing, and mobile layout.
 8. Update this document with new lifecycle or architectural decisions.
@@ -193,8 +203,9 @@ When adding a new room app:
 - Do not add app controls back into the global Settings tab when they belong to one app.
 - Do not make `RoomSidebar` aware of individual app behavior.
 - Do not duplicate the registry with hard-coded launcher entries.
-- Do not keep every app mounted as a general solution to state retention.
-- Do not let an app page own a realtime subscription or media session that must survive tab changes unless that page is intentionally kept alive.
+- Do not set `keepAlive` as a default or use it as a general solution to state retention. Require a concrete UX benefit and a small hidden footprint.
+- Do not let an app page own a realtime subscription or media session that must survive tab changes.
+- Even for a keep-alive app, long-lived room media and realtime authority must remain outside the retained UI. Visibility cleanup should be explicit and limited to transient page work.
 - Do not introduce URL routing inside the sidebar without a concrete navigation requirement.
 - Use theme tokens and the existing compact, mobile-first sidebar language.
 
@@ -206,6 +217,8 @@ For any Applications change, verify at minimum:
 - opening an app shows its internal page;
 - returning home does not incorrectly reset the app;
 - switching Chat, Social, Settings, and Applications preserves expected app state;
+- retained app form state, results, and scroll position survive hide/show transitions;
+- in-flight work and transient dialogs clean up when a retained app becomes hidden;
 - closing and reopening the sidebar preserves expected state;
 - active media or realtime behavior continues when its UI unmounts;
 - mobile sidebar controls remain readable and easy to tap;

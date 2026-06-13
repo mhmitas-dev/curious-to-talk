@@ -17,6 +17,7 @@ export interface RoomAppMeta {
   label: string;
   description: string;
   Icon: IconType;
+  keepAlive?: boolean;
 }
 
 export interface ScreenShareAppSettings {
@@ -48,6 +49,7 @@ export interface YouTubeAppState {
   isRequestingHandoff: boolean;
   isReplacing: boolean;
   isStarting: boolean;
+  visible: boolean;
   session: YouTubeActivitySession | null;
   onEnd: () => void | Promise<void>;
   onPlay: (input: string) => Promise<YouTubePlayResult>;

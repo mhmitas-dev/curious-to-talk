@@ -89,7 +89,12 @@ export function RoomSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {activeTab === "apps" && appsContent}
+        {/* Keep lightweight app UI mounted without React Activity. Activity
+            deactivates descendant effects, which can interfere with LiveKit-aware
+            app surfaces even though stage ownership lives outside the sidebar. */}
+        <div hidden={activeTab !== "apps"} className="h-full">
+          {appsContent}
+        </div>
         {activeTab === "chat" && chatContent}
         {activeTab === "social" && socialContent}
         {activeTab === "settings" && settingsContent}
