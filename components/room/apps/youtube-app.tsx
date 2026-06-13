@@ -2,12 +2,13 @@
 
 import {
   type FormEvent,
+  memo,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
-import { useParticipants } from "@livekit/components-react";
 import {
   AlertCircle,
   Copy,
@@ -37,6 +38,7 @@ import {
   type YouTubeSearchResult,
 } from "@/lib/youtube/search-client";
 import { parseYouTubeVideoId } from "@/lib/youtube/parse-youtube-url";
+import { useRoomParticipantName } from "../use-room-participant-name";
 import type { YouTubeAppState } from "./room-app-types";
 
 type SearchStatus = "error" | "idle" | "loading" | "ready";
@@ -49,7 +51,13 @@ interface PendingHandoffSelection {
   value: string;
 }
 
-export function YouTubeApp({
+const viewCountFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export const YouTubeApp = memo(function YouTubeApp({
+  activity,
   disabled,
   disabledReason,
   error: activityError,
@@ -59,12 +67,10 @@ export function YouTubeApp({
   isReplacing,
   isStarting,
   visible,
-  session,
   onEnd,
   onPlay,
   onRequestHandoff,
 }: YouTubeAppState) {
-  const participants = useParticipants();
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -76,12 +82,7 @@ export function YouTubeApp({
     useState<PendingHandoffSelection | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchResultsRef = useRef<YouTubeSearchResult[]>([]);
-  const hostParticipant = session
-    ? participants.find(
-        (participant) => participant.identity === session.hostIdentity
-      )
-    : null;
-  const hostName = hostParticipant?.name?.trim() || "Someone";
+  const hostName = useRoomParticipantName(activity?.hostIdentity ?? null);
   const playbackActionPending =
     isStarting || isReplacing || isRequestingHandoff;
 
@@ -108,7 +109,7 @@ export function YouTubeApp({
     };
   }, [visible]);
 
-  const playVideo = async (value: string, invalidMessage: string) => {
+  const playVideo = useCallback(async (value: string, invalidMessage: string) => {
     if (disabled || playbackActionPending) return;
 
     setError(null);
@@ -131,7 +132,7 @@ export function YouTubeApp({
 
     if (result === "failed") {
       setError(
-        session
+        activity
           ? "YouTube could not change videos. Try again."
           : "YouTube could not start. Try again."
       );
@@ -140,7 +141,7 @@ export function YouTubeApp({
 
     setError(null);
     return true;
-  };
+  }, [activity, disabled, onPlay, playbackActionPending]);
 
   const requestVideoHandoff = async (
     selection: PendingHandoffSelection,
@@ -174,7 +175,7 @@ export function YouTubeApp({
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (session && !isHost) {
+    if (activity && !isHost) {
       if (!parseYouTubeVideoId(input)) {
         setError("Enter a valid YouTube link.");
         return;
@@ -241,10 +242,10 @@ export function YouTubeApp({
     }
   };
 
-  const playSearchResult = async (result: YouTubeSearchResult) => {
+  const playSearchResult = useCallback(async (result: YouTubeSearchResult) => {
     if (disabled || playbackActionPending || startingResultId) return;
 
-    if (session && !isHost) {
+    if (activity && !isHost) {
       setPendingHandoff({
         resultId: result.id,
         source: "search",
@@ -264,7 +265,7 @@ export function YouTubeApp({
     } finally {
       setStartingResultId(null);
     }
-  };
+  }, [activity, disabled, isHost, playVideo, playbackActionPending, startingResultId]);
 
   const confirmHandoff = async () => {
     const selection = pendingHandoff;
@@ -283,8 +284,8 @@ export function YouTubeApp({
     }
   };
 
-  const title = session ? "YouTube is on stage" : "Play YouTube";
-  const status = session
+  const title = activity ? "YouTube is on stage" : "Play YouTube";
+  const status = activity
     ? isHost
       ? "You are the host"
       : `${hostName} is hosting`
@@ -297,12 +298,12 @@ export function YouTubeApp({
       {/* ── Status card ─────────────────────────────────────────────── */}
       <div
         className={`relative overflow-hidden rounded-xl p-4 shadow-sm transition-colors ${
-          session
+          activity
             ? "bg-[oklch(0.24_0.04_10/1)] ring-1 ring-[oklch(0.55_0.22_25/0.35)]"
             : "bg-card"
         }`}
       >
-        {session && (
+        {activity && (
           <span
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[oklch(0.55_0.22_25/0.12)] to-transparent"
@@ -311,7 +312,7 @@ export function YouTubeApp({
         <div className="relative flex items-center gap-3">
           <div
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
-              session
+              activity
                 ? "bg-[oklch(0.55_0.22_25/1)] text-white shadow-[0_0_16px_oklch(0.55_0.22_25/0.5)]"
                 : "bg-sidebar text-muted-foreground"
             }`}
@@ -321,7 +322,7 @@ export function YouTubeApp({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">{title}</p>
             <div className="mt-1 flex items-center gap-1.5">
-              {session && (
+              {activity && (
                 <span
                   className="h-1.5 w-1.5 rounded-full bg-[oklch(0.65_0.22_145)] shadow-[0_0_6px_oklch(0.65_0.22_145/0.8)]"
                   aria-label="Live"
@@ -329,7 +330,7 @@ export function YouTubeApp({
               )}
               <p
                 className={`text-xs font-medium ${
-                  session ? "text-[oklch(0.75_0.12_25)]" : "text-muted-foreground"
+                  activity ? "text-[oklch(0.75_0.12_25)]" : "text-muted-foreground"
                 }`}
               >
                 {status}
@@ -337,7 +338,7 @@ export function YouTubeApp({
             </div>
           </div>
 
-          {session && isHost && (
+          {activity && isHost && (
             <Button
               type="button"
               size="sm"
@@ -415,7 +416,7 @@ export function YouTubeApp({
 
         <SearchResults
           actionLabel={
-            session ? (isHost ? "Replace with" : "Play instead") : "Play"
+            activity ? (isHost ? "Replace with" : "Play instead") : "Play"
           }
           disabled={disabled || playbackActionPending || !!startingResultId}
           results={searchResults}
@@ -439,7 +440,7 @@ export function YouTubeApp({
       <form onSubmit={submit} className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {session
+            {activity
               ? isHost
                 ? "Replace with a link"
                 : "Play a different video"
@@ -477,7 +478,7 @@ export function YouTubeApp({
             ? "Replacing…"
             : isStarting
             ? "Starting…"
-            : session
+            : activity
             ? isHost
               ? "Replace"
               : "Play instead"
@@ -486,8 +487,8 @@ export function YouTubeApp({
       </form>
 
       {/* ── Now playing detail ──────────────────────────────────────── */}
-      {session && (
-        <NowPlayingDetail videoId={session.videoId} />
+      {activity && (
+        <NowPlayingDetail videoId={activity.videoId} />
       )}
 
       {/* ── Handoff confirmation dialog ──────────────────────────────── */}
@@ -526,7 +527,7 @@ export function YouTubeApp({
       </AlertDialog>
     </div>
   );
-}
+});
 
 function NowPlayingDetail({ videoId }: { videoId: string }) {
   const [copied, setCopied] = useState(false);
@@ -569,7 +570,7 @@ function NowPlayingDetail({ videoId }: { videoId: string }) {
   );
 }
 
-function SearchResults({
+const SearchResults = memo(function SearchResults({
   actionLabel,
   disabled,
   error,
@@ -635,30 +636,30 @@ function SearchResults({
           disabled={disabled}
           isStarting={startingResultId === result.id}
           result={result}
-          onPlay={() => onPlayResult(result)}
+          onPlayResult={onPlayResult}
         />
       ))}
     </div>
   );
-}
+});
 
-function YouTubeSearchResultRow({
+const YouTubeSearchResultRow = memo(function YouTubeSearchResultRow({
   actionLabel,
   disabled,
   isStarting,
-  onPlay,
+  onPlayResult,
   result,
 }: {
   actionLabel: PlaybackActionLabel;
   disabled: boolean;
   isStarting: boolean;
-  onPlay: () => void | Promise<void>;
+  onPlayResult: (result: YouTubeSearchResult) => void | Promise<void>;
   result: YouTubeSearchResult;
 }) {
   return (
     <button
       type="button"
-      onClick={() => void onPlay()}
+      onClick={() => void onPlayResult(result)}
       disabled={disabled}
       className="group flex w-full gap-3 rounded-xl bg-card p-2.5 text-left shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       aria-label={`${actionLabel} ${result.title}`}
@@ -669,11 +670,11 @@ function YouTubeSearchResultRow({
         <img
           src={result.thumbnail}
           alt=""
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover md:transition-transform md:duration-300 md:group-hover:scale-105"
           loading="lazy"
         />
         {/* Play overlay */}
-        <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-colors duration-200 group-hover:bg-black/40">
+        <span className="absolute inset-0 hidden items-center justify-center rounded-lg bg-black/0 transition-colors duration-200 md:flex md:group-hover:bg-black/40">
           <span className="flex h-7 w-7 scale-75 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
             {isStarting ? (
               <LoaderCircle className="h-3.5 w-3.5 animate-spin text-black" />
@@ -683,7 +684,7 @@ function YouTubeSearchResultRow({
           </span>
         </span>
         {/* Duration badge */}
-        <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
+        <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[9px] font-semibold text-white">
           {formatDuration(result.duration)}
         </span>
       </div>
@@ -718,7 +719,7 @@ function YouTubeSearchResultRow({
       </span>
     </button>
   );
-}
+});
 
 function formatDuration(durationSeconds: number) {
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return "--:--";
@@ -740,8 +741,5 @@ function formatDuration(durationSeconds: number) {
 function formatViewCount(viewCount: number) {
   if (!Number.isFinite(viewCount) || viewCount < 0) return "Views unavailable";
 
-  return `${Intl.NumberFormat("en", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(viewCount)} views`;
+  return `${viewCountFormatter.format(viewCount)} views`;
 }

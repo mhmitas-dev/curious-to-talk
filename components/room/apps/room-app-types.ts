@@ -41,6 +41,7 @@ export interface ScreenShareAppState extends ScreenShareAppSettings {
 }
 
 export interface YouTubeAppState {
+  activity: YouTubeAppActivity | null;
   disabled: boolean;
   disabledReason: string | null;
   error: string | null;
@@ -50,11 +51,15 @@ export interface YouTubeAppState {
   isReplacing: boolean;
   isStarting: boolean;
   visible: boolean;
-  session: YouTubeActivitySession | null;
   onEnd: () => void | Promise<void>;
   onPlay: (input: string) => Promise<YouTubePlayResult>;
   onRequestHandoff: (input: string) => Promise<YouTubeHandoffResult>;
 }
+
+export type YouTubeAppActivity = Pick<
+  YouTubeActivitySession,
+  "hostIdentity" | "sessionId" | "videoId"
+>;
 
 export interface RoomAppModule extends RoomAppMeta {
   isActive?: (context: RoomAppRenderContext) => boolean;

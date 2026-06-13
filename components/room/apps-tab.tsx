@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { AppLauncher } from "./apps/app-launcher";
 import { getRoomApp, ROOM_APPS } from "./apps/app-registry";
 import { AppsWorkspaceHeader } from "./apps/apps-workspace-header";
@@ -73,6 +74,20 @@ export function AppsTab({
   setScreenShareMode,
 }: AppsTabProps) {
   const selectedApp = getRoomApp(activeApp);
+  const youtubeHostIdentity = youtubeSession?.hostIdentity ?? null;
+  const youtubeSessionId = youtubeSession?.sessionId ?? null;
+  const youtubeVideoId = youtubeSession?.videoId ?? null;
+  const youtubeActivity = useMemo(
+    () =>
+      youtubeHostIdentity && youtubeSessionId && youtubeVideoId
+        ? {
+            hostIdentity: youtubeHostIdentity,
+            sessionId: youtubeSessionId,
+            videoId: youtubeVideoId,
+          }
+        : null,
+    [youtubeHostIdentity, youtubeSessionId, youtubeVideoId]
+  );
   const appContext: Omit<RoomAppRenderContext, "app"> = {
     screenShareApp: {
       bufferTime,
@@ -91,6 +106,7 @@ export function AppsTab({
       setScreenShareMode,
     },
     youtubeApp: {
+      activity: youtubeActivity,
       disabled: !!youtubeDisabledReason || youtubeIsRecovering,
       disabledReason: youtubeIsRecovering
         ? "Checking whether YouTube is already active."
@@ -102,7 +118,6 @@ export function AppsTab({
       isReplacing: youtubeIsReplacing,
       isStarting: youtubeIsStarting,
       visible: visible && selectedApp?.id === "youtube",
-      session: youtubeSession,
       onEnd: onEndYouTube,
       onPlay: onPlayYouTube,
       onRequestHandoff: onRequestYouTubeHandoff,

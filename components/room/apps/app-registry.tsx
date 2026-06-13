@@ -23,7 +23,7 @@ export const ROOM_APPS: RoomAppModule[] = [
     description: "Watch together.",
     Icon: FaYoutube,
     keepAlive: true,
-    isActive: ({ youtubeApp }) => !!youtubeApp.session,
+    isActive: ({ youtubeApp }) => !!youtubeApp.activity,
     render: ({ youtubeApp }) => <YouTubeApp {...youtubeApp} />,
   },
   {
