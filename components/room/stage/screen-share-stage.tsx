@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTracks, VideoTrack } from "@livekit/components-react";
 import { RemoteAudioTrack, RemoteTrack, Track } from "livekit-client";
-import { Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Maximize, Minimize, MonitorUp, Volume2, VolumeX } from "lucide-react";
 import type { BufferTime } from "../room-types";
 import { IdleStage } from "./idle-stage";
 
@@ -89,6 +89,14 @@ export function ScreenShareStage({ bufferTime }: { bufferTime: BufferTime }) {
     return <IdleStage />;
   }
 
+  if (activeShare.participant.isLocal) {
+    // Do not attach the publisher's own screen track to the room stage. When the
+    // user captures their full display, rendering that track inside the captured
+    // Niribi window creates a distracting hall-of-mirrors loop. Remote clients
+    // still receive and render this same LiveKit publication normally.
+    return <LocalScreenShareStage />;
+  }
+
   return (
     <div className="flex-1 min-w-0 min-h-0 flex flex-col items-center justify-center bg-black p-0 md:p-4">
       <div
@@ -121,6 +129,26 @@ export function ScreenShareStage({ bufferTime }: { bufferTime: BufferTime }) {
               <Maximize className="h-5 w-5" />
             )}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocalScreenShareStage() {
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-black p-0 md:p-4">
+      <div className="flex h-full w-full items-center justify-center overflow-hidden bg-black md:rounded-xl">
+        <div className="flex flex-col items-center px-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-card text-primary shadow-sm">
+            <MonitorUp className="h-6 w-6" />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-white">
+            Your screen is live
+          </p>
+          <p className="mt-1 text-xs text-white/60">
+            Preview hidden on this device
+          </p>
         </div>
       </div>
     </div>
