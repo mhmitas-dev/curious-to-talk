@@ -70,7 +70,7 @@ export function StageMediaFrame({ badge, children }: StageMediaFrameProps) {
   return (
     <div
       ref={containerRef}
-      className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-sidebar p-0 md:p-4"
+      className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-black p-0 md:p-4"
     >
       <div
         className="relative overflow-hidden bg-black md:rounded-xl"
