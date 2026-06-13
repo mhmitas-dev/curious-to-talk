@@ -297,24 +297,16 @@ export const YouTubeApp = memo(function YouTubeApp({
     <div className="flex flex-col gap-4 px-4 pb-4 pt-4">
       {/* ── Status card ─────────────────────────────────────────────── */}
       <div
-        className={`relative overflow-hidden rounded-xl p-4 shadow-sm transition-colors ${
-          activity
-            ? "bg-[oklch(0.24_0.04_10/1)] ring-1 ring-[oklch(0.55_0.22_25/0.35)]"
-            : "bg-card"
+        className={`rounded-xl p-4 transition-colors ${
+          activity ? "bg-red-500/10" : "bg-card"
         }`}
       >
-        {activity && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[oklch(0.55_0.22_25/0.12)] to-transparent"
-          />
-        )}
-        <div className="relative flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <div
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
               activity
-                ? "bg-[oklch(0.55_0.22_25/1)] text-white shadow-[0_0_16px_oklch(0.55_0.22_25/0.5)]"
-                : "bg-sidebar text-muted-foreground"
+                ? "bg-red-500 text-white"
+                : "bg-accent text-muted-foreground"
             }`}
           >
             <FaYoutube className="h-5 w-5" />
@@ -324,17 +316,11 @@ export const YouTubeApp = memo(function YouTubeApp({
             <div className="mt-1 flex items-center gap-1.5">
               {activity && (
                 <span
-                  className="h-1.5 w-1.5 rounded-full bg-[oklch(0.65_0.22_145)] shadow-[0_0_6px_oklch(0.65_0.22_145/0.8)]"
+                  className="h-1.5 w-1.5 rounded-full bg-primary"
                   aria-label="Live"
                 />
               )}
-              <p
-                className={`text-xs font-medium ${
-                  activity ? "text-[oklch(0.75_0.12_25)]" : "text-muted-foreground"
-                }`}
-              >
-                {status}
-              </p>
+              <p className="text-xs text-muted-foreground">{status}</p>
             </div>
           </div>
 
@@ -343,7 +329,7 @@ export const YouTubeApp = memo(function YouTubeApp({
               type="button"
               size="sm"
               variant="destructive"
-              className="relative z-10 shrink-0"
+              className="shrink-0"
               disabled={isReplacing}
               onClick={() => void onEnd()}
               aria-label="End YouTube"
@@ -383,12 +369,18 @@ export const YouTubeApp = memo(function YouTubeApp({
       {/* ── Search ──────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
         <form onSubmit={submitSearch} className="flex flex-col gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="youtube-search"
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Search
-          </span>
-          <div className="flex gap-2">
+          </label>
+          <div className="flex items-stretch gap-2">
             <Input
+              id="youtube-search"
+              name="youtube-search"
               type="search"
+              enterKeyHint="search"
               value={searchInput}
               onChange={(event) => {
                 setSearchInput(event.target.value);
@@ -402,13 +394,14 @@ export const YouTubeApp = memo(function YouTubeApp({
             <Button
               type="submit"
               size="icon-lg"
+              className="size-10"
               disabled={searchStatus === "loading" || !searchInput.trim()}
               aria-label="Search YouTube"
             >
               {searchStatus === "loading" ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
+                <LoaderCircle data-icon="inline-start" className="animate-spin" />
               ) : (
-                <Search className="h-4 w-4" />
+                <Search data-icon="inline-start" />
               )}
             </Button>
           </div>

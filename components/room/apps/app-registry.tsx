@@ -26,13 +26,13 @@ export const ROOM_APPS: RoomAppModule[] = [
     isActive: ({ youtubeApp }) => !!youtubeApp.activity,
     render: ({ youtubeApp }) => <YouTubeApp {...youtubeApp} />,
   },
-  {
-    id: "spotify",
-    label: "Spotify",
-    description: "Music controls later.",
-    Icon: FaSpotify,
-    render: ({ app }) => <PreviewApp app={app} />,
-  },
+  // {
+  //   id: "spotify",
+  //   label: "Spotify",
+  //   description: "Music controls later.",
+  //   Icon: FaSpotify,
+  //   render: ({ app }) => <PreviewApp app={app} />,
+  // },
 ];
 
 export function getRoomApp(appId: RoomAppId | null) {
