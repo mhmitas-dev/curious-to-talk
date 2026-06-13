@@ -132,7 +132,7 @@ Screen-share settings are stored in local storage by `RoomChrome` and passed dow
 
 ### YouTube
 
-Status: Phase 5 viewer-sync and recovery shell.
+Status: LiveKit playback with current-host replacement and authorized participant handoff.
 
 Component: `components/room/apps/youtube-app.tsx`
 
@@ -140,7 +140,7 @@ The Applications launcher opens a YouTube page with a link field and start/end c
 
 Previous YouTube runtime attempts were removed because they produced fragile synchronization behavior. The cleanup is intentional; do not repair deleted YouTube session/player files piecemeal.
 
-The next YouTube implementation should follow the guardrails documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
+The current YouTube implementation follows the guardrails documented in [Room Stage and Shared Media](./room-stage-and-shared-media.md):
 
 - shared YouTube state is live room session state, not durable database history;
 - LiveKit may coordinate low-frequency user intent;
@@ -161,11 +161,13 @@ The Applications page may own YouTube form state, validation messages, and app n
 
 YouTube search is a local discovery feature, not shared room state. `lib/youtube/search-client.ts` calls the external search backend for metadata only, and `components/room/apps/youtube-app.tsx` owns the search query, loading, empty, error, and result UI locally. Search is button-triggered and aborts stale requests so older responses cannot overwrite newer searches.
 
-Selecting a search result feeds the existing YouTube start flow with the result's normal YouTube URL. It does not create a second playback path. The same Screen Share and active-YouTube stage rules apply to pasted links and search results. Search results must not be written to Supabase, broadcast over LiveKit, or treated as playback authority.
+Selecting a search result feeds the same YouTube play command used by pasted links. It does not create a second playback path. Search results must not be written to Supabase or treated as playback authority; only the selected video ID enters the LiveKit activity protocol.
 
-Search remains available while YouTube is already on stage so users can look around without changing the room. During an active stage session, result playback actions stay disabled until the current activity ends.
+Search remains available while YouTube is already on stage so users can look around without changing the room. The current host may select another result or paste another link to replace their own active video. A viewer may select a result or paste a link, but must confirm that the current video will end and that they will become the host before the room-owned handoff API is called. Screen Share continues to block all YouTube starts and replacements.
 
-Queueing, takeover, and collaborative controls must not be introduced until the simple host/viewer model is stable.
+Queueing and collaborative playback controls remain separate future work. Participant handoff must continue through requester confirmation, an explicit request, current-host authorization, and a bounded timeout; a viewer selection must never publish an authoritative replacement directly. The current host is intentionally not prompted because their room hook already validates and authorizes the transition.
+
+Handoff timing is deliberately asymmetric. A host may begin accepting a request only during the protocol's short acceptance window, while the requester waits slightly longer for the already-authorized replacement result to arrive. Do not merge these into one timeout: doing so either permits stale requests or makes valid reliable packets appear to fail at the UI boundary.
 
 ### Spotify
 

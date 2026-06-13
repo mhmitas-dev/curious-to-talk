@@ -13,8 +13,9 @@ import { YouTubeViewerPlayer } from "./youtube-viewer-player";
 
 interface YouTubeActivityStageProps {
   isHost: boolean;
-  onEnd: () => void | Promise<void>;
+  onEnd: (expectedSessionId?: string) => void | Promise<void>;
   onHostPlaybackChange: (
+    sourceSessionId: string,
     command: YouTubePlaybackCommand,
     playbackStatus: YouTubePlaybackStatus,
     positionSeconds: number
@@ -39,6 +40,7 @@ export function YouTubeActivityStage({
     return (
       <StageMediaFrame badge={<YouTubeStatusBadge label={statusLabel} />}>
         <YouTubeHostPlayer
+          key={session.sessionId}
           session={session}
           onEnd={onEnd}
           onPlaybackChange={onHostPlaybackChange}
@@ -49,7 +51,7 @@ export function YouTubeActivityStage({
 
   return (
     <StageMediaFrame badge={<YouTubeStatusBadge label={statusLabel} />}>
-      <YouTubeViewerPlayer session={session} />
+      <YouTubeViewerPlayer key={session.sessionId} session={session} />
     </StageMediaFrame>
   );
 }

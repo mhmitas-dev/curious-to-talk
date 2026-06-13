@@ -111,12 +111,59 @@ Local native-controls pass:
 
 - Phase 1 exposes native YouTube controls to viewers for local comfort.
 - Viewer native controls remain local only; the viewer player still has no path to publish LiveKit playback commands.
-- Phase 2 hardens the LiveKit receiver: once a YouTube session exists, packets for another session are ignored instead of replacing the active host.
-- This means the accepted host remains authoritative until they end YouTube, leave, or the session is cleared.
-- Simultaneous starts are intentionally not a collaborative/takeover feature; the first accepted active session wins and later competing sessions are ignored.
+- Phase 2 hardens the LiveKit receiver: once a YouTube session exists, ordinary playback packets for another session are ignored instead of replacing the active host.
+- The accepted host remains authoritative until they end YouTube, leave, or authorize the explicit replacement protocol described below.
+- Simultaneous starts are not a takeover path. The first accepted active session wins; a later participant must use the confirmed handoff request rather than publishing a competing start.
 - Phase 3 tunes viewer drift correction for native controls: viewer pause/seek events trigger local correction, and the fallback correction interval is short enough to feel intentional without adding network polling.
 - Phase 4 clarifies the viewer state cue: viewers see who is hosting so local snap-back behavior reads as intentional room sync.
 - Phase 5 documents and verifies the boundary. Future work must preserve host-only publishing, viewer-local native controls, and drift correction after local viewer actions.
+
+Replacement protocol foundation:
+
+- `components/room/youtube-activity-protocol.ts` owns YouTube packet types, encoding, parsing, ordinary session acceptance, and replacement authorization rules.
+- The protocol recognizes `youtube:replace-request`, `youtube:replace`, and `youtube:replace-rejected`. Phase 2 handles authoritative replacement, and Phase 3 handles the request/rejection lifecycle used to transfer hosting.
+- An authoritative replacement must be sent by the current host, reference the exact current session, and introduce a fresh playing session at position zero and revision one.
+- Ordinary playback packets still cannot switch session IDs. Replacement is the only planned transition between two active YouTube sessions.
+- Protocol parsing and authority decisions remain covered by focused Vitest tests independently of the UI.
+
+Current-host replacement lifecycle:
+
+- The active YouTube host may choose another search result or paste another link without ending the current activity first.
+- Replacement uses `youtube:replace`; ordinary play, pause, seek, buffering, start, and recovery packets still cannot change the active session ID.
+- The current video remains locally active until the reliable replacement packet has been published successfully. A publish failure preserves the current session instead of clearing the stage.
+- Receivers accept a replacement only from the exact current host, for the exact active session, with a fresh playing session at position zero and revision one.
+- Applying a replacement marks the previous session ended before switching to the new session, so delayed packets cannot revive or mutate the old video.
+- Host player events carry their source session ID, and end/playback callbacks from an old player are ignored after the replacement. Host and viewer players are also keyed by session ID so player-local state is recreated for the new video.
+- Screen Share cannot be replaced through this path. Non-host playback actions must route through the confirmation UI and handoff engine; they must never publish replacement authority directly.
+
+Participant handoff engine:
+
+- A non-host participant may request a new video through `requestHandoff(input)`. Search results and pasted links invoke this room-owned API only after the participant confirms the takeover in the YouTube app.
+- `youtube:replace-request` is reliable and targeted only to the current host. It references the exact active session and carries the requested video ID, a unique request ID, and a bounded host-acceptance deadline.
+- The current host is the sole authority that may approve the transition. The host serializes requests, rejects stale, invalid, or competing requests, and publishes the authoritative `youtube:replace` packet on acceptance.
+- An accepted handoff creates a fresh session at position zero and revision one with the requester as `hostIdentity`. The former host becomes a viewer as soon as the replacement is applied.
+- The requester resolves success only when the replacement matches the request ID, previous session, selected video, and requester identity. Rejections are accepted only from the exact current host for the exact pending request.
+- Requests have a bounded local timeout. Timeout, rejection, publish failure, stage end, Screen Share activation, host disconnect, and hook cleanup all settle pending work without clearing a still-valid current video.
+- If the new host disappears during the transition, clients apply the existing host-missing grace period and release the new session. The handoff must not leave an ownerless YouTube stage.
+- The request engine remains LiveKit-only and session-scoped. It adds no database writes, polling loop, queue, vote, or durable takeover record.
+
+Participant handoff confirmation:
+
+- Confirmation belongs to the participant initiating the replacement. It explains that the current host's video will end and that the requester will become the new host.
+- The current host is not shown a second confirmation prompt. Their always-mounted room hook validates the request and remains the only client allowed to publish the authoritative replacement.
+- Search results and pasted links share the same confirmation and handoff path. The UI must not introduce a search-only or link-only takeover implementation.
+- While the request is pending, playback actions are disabled and the initiating control shows progress. Timeout, rejection, invalid input, room changes, and publish failures surface a local message while the existing video continues whenever it is still valid.
+- The confirmation is an accessible alert dialog: bottom-aligned on small screens and compactly centered on desktop. It uses theme tokens and no blur-heavy surface.
+- Screen Share bypasses neither confirmation nor handoff. When Screen Share owns the stage, YouTube playback actions remain disabled.
+
+Replacement and handoff hardening:
+
+- The host-acceptance deadline and requester result timeout are separate protocol constants. The host must reject a request that reaches it after the acceptance deadline, while the requester retains a small delivery margin for a replacement that was authorized in time.
+- The parser rejects malformed or artificially extended request windows before they reach room state. The current host still checks the absolute deadline at authorization time.
+- In-flight room mutations use unique operation identities rather than a shared boolean. A completion may release state only when it still owns the active operation, so an older promise cannot unlock or overwrite newer work after a lifecycle change.
+- Async start and replacement completions re-check room enablement and Screen Share ownership before applying local state. A successful publish is not sufficient authority to overwrite a stage that has moved on.
+- Screen Share clears local YouTube state immediately, even when a YouTube publish is still resolving. It invalidates the active operation and emits a best-effort end packet when the local participant owned the displaced YouTube session.
+- These rules do not add polling, persistence, a queue, or collaborative playback control. They protect the existing one-stage authority model under delayed packets and overlapping media lifecycle events.
 
 ## Database Boundary
 
@@ -148,7 +195,7 @@ Known product direction:
 - Only the YouTube host should control playback in the first stable model.
 - Viewers should not accidentally move shared playback by touching their local player.
 - When the video ends, YouTube should end and the room should return to the idle stage.
-- Queueing, takeover, and collaborative controls are out of scope for the first stable model.
+- Queueing and collaborative playback controls are out of scope. Participant takeover exists only through the explicit confirmation and host-authorized handoff protocol documented above.
 
 Likely technical direction:
 
@@ -278,7 +325,7 @@ Open design questions:
 
 - Whether native YouTube controls should be host-only, hidden, or replaced by Niribi controls.
 - How captions should work without giving viewers playback authority.
-- How takeover should work, if it is ever added.
+- Whether a lightweight room notification should later announce who changed the YouTube video.
 
 ## Current Runtime Files
 
@@ -289,13 +336,14 @@ Open design questions:
 - `components/room/stage/youtube-host-player.tsx` renders React Player for the YouTube host.
 - `components/room/stage/youtube-viewer-player.tsx` renders React Player for viewers with local-only native controls and no shared publishing path.
 - `components/room/youtube-activity-utils.ts` owns shared YouTube timing helpers.
+- `components/room/youtube-activity-protocol.ts` owns the LiveKit packet contract and pure authority checks.
 - `components/room/use-room-stage-state.ts` coordinates the database-backed Screen Share stage state.
 - `components/room/use-room-youtube-activity.ts` coordinates the LiveKit-only YouTube lifecycle shell.
 - `components/room/use-screen-share-state.ts` owns LiveKit screen-share publishing and subscription state.
 - `components/room/apps/screen-share-app.tsx` renders Screen Share controls inside Applications.
-- `components/room/apps/youtube-app.tsx` renders the Phase 1 YouTube start/end shell inside Applications.
+- `components/room/apps/youtube-app.tsx` renders YouTube discovery and the host/viewer activity controls inside Applications.
 
-Queueing, takeover, collaborative controls, and a custom YouTube control surface remain intentionally deferred.
+Queueing, collaborative controls, room-wide handoff notifications, and a custom YouTube control surface remain intentionally deferred.
 
 ## Local Native Controls Verification
 

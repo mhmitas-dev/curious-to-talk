@@ -16,8 +16,9 @@ interface RoomStageProps {
   owner: RoomStageOwner;
   youtube: {
     isHost: boolean;
-    onEnd: () => void | Promise<void>;
+    onEnd: (expectedSessionId?: string) => void | Promise<void>;
     onHostPlaybackChange: (
+      sourceSessionId: string,
       command: YouTubePlaybackCommand,
       playbackStatus: YouTubePlaybackStatus,
       positionSeconds: number

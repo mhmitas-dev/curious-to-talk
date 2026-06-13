@@ -1,17 +1,37 @@
 "use client";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useParticipants } from "@livekit/components-react";
 import { Clock, LoaderCircle, Play, Search, Square } from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   searchYouTube,
   type YouTubeSearchResult,
 } from "@/lib/youtube/search-client";
+import { parseYouTubeVideoId } from "@/lib/youtube/parse-youtube-url";
 import type { YouTubeAppState } from "./room-app-types";
 
 type SearchStatus = "error" | "idle" | "loading" | "ready";
+type PlaybackActionLabel = "Play" | "Play instead" | "Replace with";
+
+interface PendingHandoffSelection {
+  resultId: string | null;
+  source: "link" | "search";
+  title: string;
+  value: string;
+}
 
 export function YouTubeApp({
   disabled,
@@ -19,11 +39,15 @@ export function YouTubeApp({
   error: activityError,
   isHost,
   isRecovering,
+  isRequestingHandoff,
+  isReplacing,
   isStarting,
   session,
   onEnd,
-  onStart,
+  onPlay,
+  onRequestHandoff,
 }: YouTubeAppState) {
+  const participants = useParticipants();
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -31,7 +55,17 @@ export function YouTubeApp({
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [startingResultId, setStartingResultId] = useState<string | null>(null);
+  const [pendingHandoff, setPendingHandoff] =
+    useState<PendingHandoffSelection | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const hostParticipant = session
+    ? participants.find(
+        (participant) => participant.identity === session.hostIdentity
+      )
+    : null;
+  const hostName = hostParticipant?.name?.trim() || "Someone";
+  const playbackActionPending =
+    isStarting || isReplacing || isRequestingHandoff;
 
   useEffect(() => {
     return () => {
@@ -39,14 +73,19 @@ export function YouTubeApp({
     };
   }, []);
 
-  const startVideo = async (value: string, invalidMessage: string) => {
-    if (disabled || isStarting || session) return;
+  const playVideo = async (value: string, invalidMessage: string) => {
+    if (disabled || playbackActionPending) return;
 
     setError(null);
 
-    const result = await onStart(value);
+    const result = await onPlay(value);
     if (result === "invalid") {
       setError(invalidMessage);
+      return false;
+    }
+
+    if (result === "already-playing") {
+      setError("This video is already on stage.");
       return false;
     }
 
@@ -56,7 +95,11 @@ export function YouTubeApp({
     }
 
     if (result === "failed") {
-      setError("YouTube could not start. Try again.");
+      setError(
+        session
+          ? "YouTube could not change videos. Try again."
+          : "YouTube could not start. Try again."
+      );
       return false;
     }
 
@@ -64,11 +107,55 @@ export function YouTubeApp({
     return true;
   };
 
+  const requestVideoHandoff = async (
+    selection: PendingHandoffSelection,
+    invalidMessage: string
+  ) => {
+    setError(null);
+
+    const result = await onRequestHandoff(selection.value);
+    if (result === "replaced") {
+      setError(null);
+      if (selection.source === "link") setInput("");
+      else setSearchError(null);
+      return true;
+    }
+
+    if (result === "invalid") {
+      setError(invalidMessage);
+    } else if (result === "already-playing") {
+      setError("This video is already on stage.");
+    } else if (result === "timeout") {
+      setError(`${hostName} did not respond. The current video is still playing.`);
+    } else if (result === "occupied") {
+      setError("The room changed before this video could start. Try again.");
+    } else {
+      setError("YouTube could not change videos. Try again.");
+    }
+
+    return false;
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const started = await startVideo(input, "Enter a valid YouTube link.");
-    if (started) setInput("");
+    if (session && !isHost) {
+      if (!parseYouTubeVideoId(input)) {
+        setError("Enter a valid YouTube link.");
+        return;
+      }
+
+      setPendingHandoff({
+        resultId: null,
+        source: "link",
+        title: "the pasted video",
+        value: input,
+      });
+      return;
+    }
+
+    const played = await playVideo(input, "Enter a valid YouTube link.");
+    if (played) setInput("");
   };
 
   const submitSearch = async (event: FormEvent<HTMLFormElement>) => {
@@ -117,15 +204,42 @@ export function YouTubeApp({
   };
 
   const playSearchResult = async (result: YouTubeSearchResult) => {
-    if (disabled || isStarting || session || startingResultId) return;
+    if (disabled || playbackActionPending || startingResultId) return;
+
+    if (session && !isHost) {
+      setPendingHandoff({
+        resultId: result.id,
+        source: "search",
+        title: result.title,
+        value: result.url || result.id,
+      });
+      return;
+    }
 
     setStartingResultId(result.id);
     try {
-      const started = await startVideo(
+      const played = await playVideo(
         result.url || result.id,
         "This search result cannot be played."
       );
-      if (started) setSearchError(null);
+      if (played) setSearchError(null);
+    } finally {
+      setStartingResultId(null);
+    }
+  };
+
+  const confirmHandoff = async () => {
+    const selection = pendingHandoff;
+    if (!selection || isRequestingHandoff) return;
+
+    setStartingResultId(selection.resultId);
+    try {
+      await requestVideoHandoff(
+        selection,
+        selection.source === "link"
+          ? "Enter a valid YouTube link."
+          : "This search result cannot be played."
+      );
     } finally {
       setStartingResultId(null);
     }
@@ -135,7 +249,7 @@ export function YouTubeApp({
   const status = session
     ? isHost
       ? "You are the host"
-      : "Someone is hosting"
+      : `${hostName} is hosting`
     : isRecovering
       ? "Checking room"
       : "Ready";
@@ -164,6 +278,7 @@ export function YouTubeApp({
               size="sm"
               variant="destructive"
               className="shrink-0"
+              disabled={isReplacing}
               onClick={() => void onEnd()}
               aria-label="End YouTube"
             >
@@ -208,7 +323,14 @@ export function YouTubeApp({
         </form>
 
         <SearchResults
-          disabled={disabled || isStarting || !!session || !!startingResultId}
+          actionLabel={
+            session ? (isHost ? "Replace with" : "Play instead") : "Play"
+          }
+          disabled={
+            disabled ||
+            playbackActionPending ||
+            !!startingResultId
+          }
           results={searchResults}
           onPlayResult={playSearchResult}
           startingResultId={startingResultId}
@@ -216,20 +338,23 @@ export function YouTubeApp({
           error={searchError}
         />
 
-        {!session && (
-          <>
-            <div className="relative flex items-center justify-center">
-              <span className="h-px flex-1 bg-border" />
-              <span className="px-3 text-[10px] font-semibold uppercase text-muted-foreground">
-                or paste link
-              </span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
+        <>
+          <div className="relative flex items-center justify-center">
+            <span className="h-px flex-1 bg-border" />
+            <span className="px-3 text-[10px] font-semibold uppercase text-muted-foreground">
+              or paste link
+            </span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={submit} className="flex flex-col gap-3">
               <label className="flex flex-col gap-2">
                 <span className="text-xs font-medium text-primary">
-                  Video link
+                  {session
+                    ? isHost
+                      ? "Replace with a link"
+                      : "Play a different video"
+                    : "Video link"}
                 </span>
                 <Input
                   type="url"
@@ -241,7 +366,7 @@ export function YouTubeApp({
                   }}
                   placeholder="https://youtube.com/watch?v=..."
                   className="h-10 bg-background"
-                  disabled={disabled || isStarting}
+                  disabled={disabled || playbackActionPending}
                   aria-invalid={!!error}
                 />
               </label>
@@ -250,14 +375,25 @@ export function YouTubeApp({
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={disabled || isStarting || !input.trim()}
+                disabled={
+                  disabled || playbackActionPending || !input.trim()
+                }
               >
                 <Play data-icon="inline-start" />
-                {isStarting ? "Starting" : "Play"}
+                {isRequestingHandoff
+                  ? "Requesting"
+                  : isReplacing
+                  ? "Replacing"
+                  : isStarting
+                    ? "Starting"
+                    : session
+                      ? isHost
+                        ? "Replace"
+                        : "Play instead"
+                      : "Play"}
               </Button>
             </form>
           </>
-        )}
       </div>
 
       {session && (
@@ -282,11 +418,42 @@ export function YouTubeApp({
           {activityError}
         </p>
       )}
+
+      <AlertDialog
+        open={!!pendingHandoff}
+        onOpenChange={(open) => {
+          if (!open) setPendingHandoff(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Play this video instead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {hostName} is currently playing YouTube. Starting
+              {pendingHandoff ? ` “${pendingHandoff.title}”` : " this video"}
+              {" "}will end their video and make you the host.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRequestingHandoff}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRequestingHandoff}
+              onClick={() => void confirmHandoff()}
+            >
+              <Play data-icon="inline-start" />
+              Play video
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 function SearchResults({
+  actionLabel,
   disabled,
   error,
   onPlayResult,
@@ -294,6 +461,7 @@ function SearchResults({
   startingResultId,
   status,
 }: {
+  actionLabel: PlaybackActionLabel;
   disabled: boolean;
   error: string | null;
   onPlayResult: (result: YouTubeSearchResult) => void | Promise<void>;
@@ -330,6 +498,7 @@ function SearchResults({
       {results.map((result) => (
         <YouTubeSearchResultRow
           key={result.id}
+          actionLabel={actionLabel}
           disabled={disabled}
           isStarting={startingResultId === result.id}
           result={result}
@@ -341,11 +510,13 @@ function SearchResults({
 }
 
 function YouTubeSearchResultRow({
+  actionLabel,
   disabled,
   isStarting,
   onPlay,
   result,
 }: {
+  actionLabel: PlaybackActionLabel;
   disabled: boolean;
   isStarting: boolean;
   onPlay: () => void | Promise<void>;
@@ -357,7 +528,7 @@ function YouTubeSearchResultRow({
       onClick={() => void onPlay()}
       disabled={disabled}
       className="flex w-full gap-3 rounded-xl bg-card p-2.5 text-left shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-      aria-label={`Play ${result.title}`}
+      aria-label={`${actionLabel} ${result.title}`}
     >
       <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-sidebar">
         {/* eslint-disable-next-line @next/next/no-img-element -- Remote YouTube thumbnails are discovery metadata, not app-owned media assets. */}

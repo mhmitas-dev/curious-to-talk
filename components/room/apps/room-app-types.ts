@@ -8,6 +8,8 @@ import type {
   ScreenShareMode,
   ScreenShareState,
   YouTubeActivitySession,
+  YouTubeHandoffResult,
+  YouTubePlayResult,
 } from "../room-types";
 
 export interface RoomAppMeta {
@@ -43,10 +45,13 @@ export interface YouTubeAppState {
   error: string | null;
   isHost: boolean;
   isRecovering: boolean;
+  isRequestingHandoff: boolean;
+  isReplacing: boolean;
   isStarting: boolean;
   session: YouTubeActivitySession | null;
   onEnd: () => void | Promise<void>;
-  onStart: (input: string) => Promise<"failed" | "invalid" | "occupied" | "started">;
+  onPlay: (input: string) => Promise<YouTubePlayResult>;
+  onRequestHandoff: (input: string) => Promise<YouTubeHandoffResult>;
 }
 
 export interface RoomAppModule extends RoomAppMeta {

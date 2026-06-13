@@ -11,8 +11,9 @@ import { getExpectedYouTubePosition } from "../youtube-activity-utils";
 
 interface YouTubeHostPlayerProps {
   session: YouTubeActivitySession;
-  onEnd: () => void | Promise<void>;
+  onEnd: (expectedSessionId?: string) => void | Promise<void>;
   onPlaybackChange: (
+    sourceSessionId: string,
     command: YouTubePlaybackCommand,
     playbackStatus: YouTubePlaybackStatus,
     positionSeconds: number
@@ -64,7 +65,12 @@ export function YouTubeHostPlayer({
     command: YouTubePlaybackCommand,
     playbackStatus: YouTubePlaybackStatus = getPlayerStatus()
   ) => {
-    void onPlaybackChange(command, playbackStatus, getPlayerPosition());
+    void onPlaybackChange(
+      sessionRef.current.sessionId,
+      command,
+      playbackStatus,
+      getPlayerPosition()
+    );
   };
 
   const scheduleBuffering = () => {
@@ -165,7 +171,7 @@ export function YouTubeHostPlayer({
         onSeeked={() => publishPlayerChange("seek")}
         onEnded={() => {
           clearBufferingTimer();
-          void onEnd();
+          void onEnd(session.sessionId);
         }}
         onError={() => setError(true)}
         fallback={

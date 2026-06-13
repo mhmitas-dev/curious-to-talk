@@ -266,19 +266,18 @@ function RoomChrome({
             youtubeDisabledReason={
               roomStage.owner === "screenShare"
                 ? "Screen Share is currently using the stage."
-                : youtube.session
-                  ? youtube.isHost
-                    ? "You are already hosting YouTube."
-                    : "Someone is already hosting YouTube."
-                  : null
+                : null
             }
             youtubeError={youtube.error}
             youtubeIsHost={youtube.isHost}
             youtubeIsRecovering={youtube.isRecovering}
+            youtubeIsRequestingHandoff={youtube.isRequestingHandoff}
+            youtubeIsReplacing={youtube.isReplacing}
             youtubeIsStarting={youtube.isStarting}
             youtubeSession={youtube.session}
             onEndYouTube={youtube.end}
-            onStartYouTube={youtube.start}
+            onPlayYouTube={youtube.play}
+            onRequestYouTubeHandoff={youtube.requestHandoff}
             setBufferTime={setBufferTime}
             setScreenFps={setScreenFps}
             setScreenQuality={setScreenQuality}

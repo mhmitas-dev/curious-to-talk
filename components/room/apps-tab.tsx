@@ -11,6 +11,8 @@ import type {
   RoomAppId,
   ScreenShareState,
   YouTubeActivitySession,
+  YouTubeHandoffResult,
+  YouTubePlayResult,
 } from "./room-types";
 
 interface AppsTabProps extends ScreenShareAppSettings {
@@ -27,10 +29,13 @@ interface AppsTabProps extends ScreenShareAppSettings {
   youtubeError: string | null;
   youtubeIsHost: boolean;
   youtubeIsRecovering: boolean;
+  youtubeIsRequestingHandoff: boolean;
+  youtubeIsReplacing: boolean;
   youtubeIsStarting: boolean;
   youtubeSession: YouTubeActivitySession | null;
   onEndYouTube: () => void | Promise<void>;
-  onStartYouTube: (input: string) => Promise<"failed" | "invalid" | "occupied" | "started">;
+  onPlayYouTube: (input: string) => Promise<YouTubePlayResult>;
+  onRequestYouTubeHandoff: (input: string) => Promise<YouTubeHandoffResult>;
 }
 
 export function AppsTab({
@@ -51,10 +56,13 @@ export function AppsTab({
   youtubeError,
   youtubeIsHost,
   youtubeIsRecovering,
+  youtubeIsRequestingHandoff,
+  youtubeIsReplacing,
   youtubeIsStarting,
   youtubeSession,
   onEndYouTube,
-  onStartYouTube,
+  onPlayYouTube,
+  onRequestYouTubeHandoff,
   setBufferTime,
   setScreenFps,
   setScreenQuality,
@@ -86,10 +94,13 @@ export function AppsTab({
       error: youtubeError,
       isHost: youtubeIsHost,
       isRecovering: youtubeIsRecovering,
+      isRequestingHandoff: youtubeIsRequestingHandoff,
+      isReplacing: youtubeIsReplacing,
       isStarting: youtubeIsStarting,
       session: youtubeSession,
       onEnd: onEndYouTube,
-      onStart: onStartYouTube,
+      onPlay: onPlayYouTube,
+      onRequestHandoff: onRequestYouTubeHandoff,
     },
   };
 

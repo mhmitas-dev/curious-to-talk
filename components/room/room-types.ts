@@ -14,6 +14,20 @@ export type ScreenFPS = 15 | 30;
 export type BufferTime = 0 | 1 | 3 | 5;
 export type YouTubePlaybackCommand = "buffering" | "pause" | "play" | "seek";
 export type YouTubePlaybackStatus = "buffering" | "paused" | "playing";
+export type YouTubePlayResult =
+  | "already-playing"
+  | "failed"
+  | "invalid"
+  | "occupied"
+  | "replaced"
+  | "started";
+export type YouTubeHandoffResult =
+  | "already-playing"
+  | "failed"
+  | "invalid"
+  | "occupied"
+  | "replaced"
+  | "timeout";
 
 export interface RoomAppSession {
   id: RoomAppId;
