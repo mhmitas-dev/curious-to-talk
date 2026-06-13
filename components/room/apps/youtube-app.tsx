@@ -8,7 +8,17 @@ import {
   useState,
 } from "react";
 import { useParticipants } from "@livekit/components-react";
-import { Clock, LoaderCircle, Play, Search, Square } from "lucide-react";
+import {
+  AlertCircle,
+  Copy,
+  Eye,
+  Info,
+  LoaderCircle,
+  Play,
+  Search,
+  Square,
+  Tv2,
+} from "lucide-react";
 import { FaYoutube } from "react-icons/fa";
 import {
   AlertDialog,
@@ -283,21 +293,48 @@ export function YouTubeApp({
       : "Ready";
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
-      <div className="rounded-xl bg-card p-4 shadow-sm">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-4 px-4 pb-4 pt-4">
+      {/* ── Status card ─────────────────────────────────────────────── */}
+      <div
+        className={`relative overflow-hidden rounded-xl p-4 shadow-sm transition-colors ${
+          session
+            ? "bg-[oklch(0.24_0.04_10/1)] ring-1 ring-[oklch(0.55_0.22_25/0.35)]"
+            : "bg-card"
+        }`}
+      >
+        {session && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[oklch(0.55_0.22_25/0.12)] to-transparent"
+          />
+        )}
+        <div className="relative flex items-center gap-3">
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
               session
-                ? "bg-primary text-primary-foreground"
-                : "bg-sidebar text-foreground"
+                ? "bg-[oklch(0.55_0.22_25/1)] text-white shadow-[0_0_16px_oklch(0.55_0.22_25/0.5)]"
+                : "bg-sidebar text-muted-foreground"
             }`}
           >
             <FaYoutube className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground">{title}</p>
-            <p className="mt-1 text-xs font-medium text-primary">{status}</p>
+            <p className="text-sm font-semibold text-foreground">{title}</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              {session && (
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-[oklch(0.65_0.22_145)] shadow-[0_0_6px_oklch(0.65_0.22_145/0.8)]"
+                  aria-label="Live"
+                />
+              )}
+              <p
+                className={`text-xs font-medium ${
+                  session ? "text-[oklch(0.75_0.12_25)]" : "text-muted-foreground"
+                }`}
+              >
+                {status}
+              </p>
+            </div>
           </div>
 
           {session && isHost && (
@@ -305,148 +342,155 @@ export function YouTubeApp({
               type="button"
               size="sm"
               variant="destructive"
-              className="shrink-0"
+              className="relative z-10 shrink-0"
               disabled={isReplacing}
               onClick={() => void onEnd()}
               aria-label="End YouTube"
             >
-              <Square data-icon="inline-start" />
+              {isReplacing ? (
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
+              ) : (
+                <Square data-icon="inline-start" />
+              )}
               End
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <form onSubmit={submitSearch} className="space-y-3">
-          <label className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-primary">Search YouTube</span>
-            <div className="flex gap-2">
-              <Input
-                type="search"
-                value={searchInput}
-                onChange={(event) => {
-                  setSearchInput(event.target.value);
-                  if (searchError) setSearchError(null);
-                }}
-                placeholder="Search videos"
-                className="h-10 bg-background"
-                disabled={searchStatus === "loading"}
-                aria-invalid={searchStatus === "error"}
-              />
-              <Button
-                type="submit"
-                size="icon-lg"
-                disabled={searchStatus === "loading" || !searchInput.trim()}
-                aria-label="Search YouTube"
-              >
-                {searchStatus === "loading" ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </label>
+      {/* ── Inline notices ──────────────────────────────────────────── */}
+      {disabledReason && (
+        <div className="flex items-start gap-2.5 rounded-lg bg-card px-3 py-2.5 ring-1 ring-border">
+          <Info className="mt-px h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {disabledReason}
+          </p>
+        </div>
+      )}
+      {(error ?? activityError) && (
+        <div className="flex items-start gap-2.5 rounded-lg bg-[oklch(0.22_0.04_24/1)] px-3 py-2.5 ring-1 ring-destructive/30">
+          <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0 text-destructive" />
+          <p className="text-xs leading-relaxed text-destructive">
+            {error ?? activityError}
+          </p>
+        </div>
+      )}
+
+      {/* ── Search ──────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <form onSubmit={submitSearch} className="flex flex-col gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Search
+          </span>
+          <div className="flex gap-2">
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                if (searchError) setSearchError(null);
+              }}
+              placeholder="Artist, song, or title…"
+              className="h-10 bg-background"
+              disabled={searchStatus === "loading"}
+              aria-invalid={searchStatus === "error"}
+            />
+            <Button
+              type="submit"
+              size="icon-lg"
+              disabled={searchStatus === "loading" || !searchInput.trim()}
+              aria-label="Search YouTube"
+            >
+              {searchStatus === "loading" ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </form>
 
         <SearchResults
           actionLabel={
             session ? (isHost ? "Replace with" : "Play instead") : "Play"
           }
-          disabled={
-            disabled ||
-            playbackActionPending ||
-            !!startingResultId
-          }
+          disabled={disabled || playbackActionPending || !!startingResultId}
           results={searchResults}
           onPlayResult={playSearchResult}
           startingResultId={startingResultId}
           status={searchStatus}
           error={searchError}
         />
-
-        <>
-          <div className="relative flex items-center justify-center">
-            <span className="h-px flex-1 bg-border" />
-            <span className="px-3 text-[10px] font-semibold uppercase text-muted-foreground">
-              or paste link
-            </span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-            <form onSubmit={submit} className="flex flex-col gap-3">
-              <label className="flex flex-col gap-2">
-                <span className="text-xs font-medium text-primary">
-                  {session
-                    ? isHost
-                      ? "Replace with a link"
-                      : "Play a different video"
-                    : "Video link"}
-                </span>
-                <Input
-                  type="url"
-                  inputMode="url"
-                  value={input}
-                  onChange={(event) => {
-                    setInput(event.target.value);
-                    if (error) setError(null);
-                  }}
-                  placeholder="https://youtube.com/watch?v=..."
-                  className="h-10 bg-background"
-                  disabled={disabled || playbackActionPending}
-                  aria-invalid={!!error}
-                />
-              </label>
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={
-                  disabled || playbackActionPending || !input.trim()
-                }
-              >
-                <Play data-icon="inline-start" />
-                {isRequestingHandoff
-                  ? "Requesting"
-                  : isReplacing
-                  ? "Replacing"
-                  : isStarting
-                    ? "Starting"
-                    : session
-                      ? isHost
-                        ? "Replace"
-                        : "Play instead"
-                      : "Play"}
-              </Button>
-            </form>
-          </>
       </div>
 
-      {session && (
-        <div className="rounded-xl bg-card p-4 text-xs leading-relaxed text-muted-foreground shadow-sm">
-          <p className="font-medium text-foreground">Video ID</p>
-          <p className="mt-1 break-all">{session.videoId}</p>
+      {/* ── Divider ─────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          or paste link
+        </span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      {/* ── Link form ───────────────────────────────────────────────── */}
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {session
+              ? isHost
+                ? "Replace with a link"
+                : "Play a different video"
+              : "Video link"}
+          </span>
+          <Input
+            type="url"
+            inputMode="url"
+            value={input}
+            onChange={(event) => {
+              setInput(event.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="https://youtube.com/watch?v=…"
+            className="h-10 bg-background"
+            disabled={disabled || playbackActionPending}
+            aria-invalid={!!error}
+          />
         </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={disabled || playbackActionPending || !input.trim()}
+        >
+          {isRequestingHandoff || isReplacing || isStarting ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Play data-icon="inline-start" />
+          )}
+          {isRequestingHandoff
+            ? "Requesting…"
+            : isReplacing
+            ? "Replacing…"
+            : isStarting
+            ? "Starting…"
+            : session
+            ? isHost
+              ? "Replace"
+              : "Play instead"
+            : "Play"}
+        </Button>
+      </form>
+
+      {/* ── Now playing detail ──────────────────────────────────────── */}
+      {session && (
+        <NowPlayingDetail videoId={session.videoId} />
       )}
 
-      {disabledReason && (
-        <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-          {disabledReason}
-        </p>
-      )}
-      {error && (
-        <p className="px-1 text-xs leading-relaxed text-destructive">
-          {error}
-        </p>
-      )}
-      {!error && activityError && (
-        <p className="px-1 text-xs leading-relaxed text-destructive">
-          {activityError}
-        </p>
-      )}
-
+      {/* ── Handoff confirmation dialog ──────────────────────────────── */}
       <AlertDialog
         open={!!pendingHandoff}
         onOpenChange={(open) => {
@@ -458,7 +502,7 @@ export function YouTubeApp({
             <AlertDialogTitle>Play this video instead?</AlertDialogTitle>
             <AlertDialogDescription>
               {hostName} is currently playing YouTube. Starting
-              {pendingHandoff ? ` “${pendingHandoff.title}”` : " this video"}
+              {pendingHandoff ? ` "${pendingHandoff.title}"` : " this video"}
               {" "}will end their video and make you the host.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -470,12 +514,57 @@ export function YouTubeApp({
               disabled={isRequestingHandoff}
               onClick={() => void confirmHandoff()}
             >
-              <Play data-icon="inline-start" />
+              {isRequestingHandoff ? (
+                <LoaderCircle data-icon="inline-start" className="animate-spin" />
+              ) : (
+                <Play data-icon="inline-start" />
+              )}
               Play video
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function NowPlayingDetail({ videoId }: { videoId: string }) {
+  const [copied, setCopied] = useState(false);
+  const videoUrl = `https://youtube.com/watch?v=${videoId}`;
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(videoUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-sm ring-1 ring-border">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar text-muted-foreground">
+        <Tv2 className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Now playing
+        </p>
+        <p className="mt-0.5 truncate font-mono text-xs text-foreground">
+          {videoId}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copy video link"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Copy className={`h-3.5 w-3.5 transition-opacity ${copied ? "opacity-0" : "opacity-100"}`} />
+        {copied && (
+          <span className="absolute text-[10px] font-medium text-primary">
+            ✓
+          </span>
+        )}
+      </button>
     </div>
   );
 }
@@ -499,24 +588,40 @@ function SearchResults({
 }) {
   if (status === "idle" && results.length === 0 && !error) {
     return (
-      <div className="rounded-xl bg-card p-4 text-xs leading-relaxed text-muted-foreground shadow-sm">
-        Search results will appear here.
+      <div className="flex flex-col items-center gap-2 rounded-xl bg-card px-4 py-7 text-center shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar text-muted-foreground/50">
+          <Search className="h-4 w-4" />
+        </div>
+        <p className="text-xs text-muted-foreground">Search results will appear here.</p>
       </div>
     );
   }
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-24 items-center justify-center rounded-xl bg-card text-muted-foreground shadow-sm">
-        <LoaderCircle className="h-5 w-5 animate-spin" />
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex gap-3 rounded-xl bg-card p-2.5 shadow-sm"
+            style={{ opacity: 1 - i * 0.25 }}
+          >
+            <div className="h-16 w-24 shrink-0 animate-pulse rounded-lg bg-sidebar" />
+            <div className="flex flex-1 flex-col justify-center gap-2 py-1">
+              <div className="h-2.5 w-4/5 animate-pulse rounded bg-sidebar" />
+              <div className="h-2 w-2/5 animate-pulse rounded bg-sidebar" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   if (error && results.length === 0) {
     return (
-      <div className="rounded-xl bg-card p-4 text-xs leading-relaxed text-muted-foreground shadow-sm">
-        {error}
+      <div className="flex items-center gap-2.5 rounded-xl bg-card px-4 py-3.5 shadow-sm">
+        <AlertCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <p className="text-xs leading-relaxed text-muted-foreground">{error}</p>
       </div>
     );
   }
@@ -555,44 +660,62 @@ function YouTubeSearchResultRow({
       type="button"
       onClick={() => void onPlay()}
       disabled={disabled}
-      className="flex w-full gap-3 rounded-xl bg-card p-2.5 text-left shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+      className="group flex w-full gap-3 rounded-xl bg-card p-2.5 text-left shadow-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       aria-label={`${actionLabel} ${result.title}`}
     >
+      {/* Thumbnail */}
       <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-sidebar">
         {/* eslint-disable-next-line @next/next/no-img-element -- Remote YouTube thumbnails are discovery metadata, not app-owned media assets. */}
         <img
           src={result.thumbnail}
           alt=""
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
         />
-        <span className="absolute bottom-1 right-1 rounded bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground">
+        {/* Play overlay */}
+        <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-colors duration-200 group-hover:bg-black/40">
+          <span className="flex h-7 w-7 scale-75 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-md transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
+            {isStarting ? (
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-black" />
+            ) : (
+              <Play className="ml-0.5 h-3.5 w-3.5 text-black" />
+            )}
+          </span>
+        </span>
+        {/* Duration badge */}
+        <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
           {formatDuration(result.duration)}
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-start gap-2 py-0.5">
-        <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-xs font-medium leading-snug text-foreground">
-            {result.title}
-          </h3>
-          <p className="mt-1 truncate text-[11px] text-muted-foreground">
-            {result.channel}
-          </p>
-          <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {formatViewCount(result.viewCount)}
-          </p>
-        </div>
-
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          {isStarting ? (
-            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Play className="ml-0.5 h-3.5 w-3.5" />
-          )}
-        </span>
+      {/* Metadata */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-0.5">
+        <h3 className="line-clamp-2 text-xs font-medium leading-snug text-foreground">
+          {result.title}
+        </h3>
+        <p className="truncate text-[11px] text-muted-foreground">
+          {result.channel}
+        </p>
+        <p className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+          <Eye className="h-2.5 w-2.5" />
+          {formatViewCount(result.viewCount)}
+        </p>
       </div>
+
+      {/* Play button — visible only when NOT hovering (hover shows overlay instead) */}
+      <span
+        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
+          isStarting
+            ? "bg-primary text-primary-foreground"
+            : "bg-sidebar text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground"
+        }`}
+      >
+        {isStarting ? (
+          <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Play className="ml-0.5 h-3.5 w-3.5" />
+        )}
+      </span>
     </button>
   );
 }
