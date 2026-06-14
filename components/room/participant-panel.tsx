@@ -215,7 +215,7 @@ function ParticipantProfileDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end bg-background md:items-center md:justify-center"
+      className="fixed inset-0 z-[60] flex items-end bg-background/50 md:items-center md:justify-center md:bg-background/60"
       role="dialog"
       aria-modal="true"
       aria-label={`${profile.displayName} profile`}
@@ -227,7 +227,7 @@ function ParticipantProfileDialog({
         aria-label="Close participant profile"
       />
 
-      <div className="relative w-full rounded-t-2xl border-t border-border bg-sidebar px-5 pb-6 pt-3 shadow-2xl md:w-[320px] md:rounded-2xl md:border md:p-5">
+      <div className="relative w-full rounded-t-2xl border-t border-border bg-sidebar px-5 pb-6 pt-3 shadow-xl will-change-transform animate-in slide-in-from-bottom-2 duration-150 md:w-[320px] md:rounded-2xl md:border md:p-5 md:zoom-in-95">
         <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-border md:hidden" />
 
         <div className="mb-2 flex justify-end">

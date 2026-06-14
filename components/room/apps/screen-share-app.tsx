@@ -10,6 +10,10 @@ export function ScreenShareApp({
   screenFps,
   screenQuality,
   screenShareMode,
+  stageError,
+  stageOccupied,
+  stageReady,
+  stageTransitioning,
   onToggleScreenShare,
   setBufferTime,
   setScreenFps,
@@ -19,13 +23,19 @@ export function ScreenShareApp({
   const { iAmSharing, someoneElseIsSharing, sharerName } = screenShare;
   const actionLabel = iAmSharing
     ? "Stop sharing"
-    : someoneElseIsSharing
-      ? "Sharing unavailable"
-      : "Create screen share";
+    : stageTransitioning
+      ? "Updating stage"
+      : !stageReady
+        ? "Connecting to stage"
+        : someoneElseIsSharing || stageOccupied
+          ? "Sharing unavailable"
+          : "Create screen share";
   const statusText = iAmSharing
     ? "You are presenting"
     : someoneElseIsSharing
       ? `${sharerName} is presenting`
+      : stageOccupied
+        ? "The stage is in use"
       : "Ready to share";
 
   return (
@@ -53,6 +63,8 @@ export function ScreenShareApp({
                 ? "Screen share is live"
                 : someoneElseIsSharing
                   ? "Someone is already sharing"
+                  : stageOccupied
+                    ? "Stage is already in use"
                   : "Share your screen"}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -60,6 +72,8 @@ export function ScreenShareApp({
                 ? "Stop when you are finished presenting."
                 : someoneElseIsSharing
                   ? "Only one screen share can run in the room at a time."
+                  : stageOccupied
+                    ? "End the current stage activity before starting screen share."
                   : "Choose a tab, window, or screen from your browser prompt."}
             </p>
             <p className="mt-3 text-xs font-medium text-primary">
@@ -72,17 +86,26 @@ export function ScreenShareApp({
       <button
         type="button"
         onClick={onToggleScreenShare}
-        disabled={someoneElseIsSharing}
+        disabled={
+          stageTransitioning ||
+          (!iAmSharing && (someoneElseIsSharing || stageOccupied || !stageReady))
+        }
         className={`flex min-h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           iAmSharing
             ? "bg-destructive/15 text-destructive hover:bg-destructive/20"
-            : someoneElseIsSharing
+            : someoneElseIsSharing || stageOccupied || !stageReady || stageTransitioning
               ? "cursor-not-allowed bg-card text-muted-foreground opacity-60"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
         }`}
       >
         {actionLabel}
       </button>
+
+      {stageError && (
+        <p className="px-1 text-xs leading-relaxed text-destructive" role="status">
+          {stageError}
+        </p>
+      )}
 
       <div className="flex flex-col gap-3 rounded-xl bg-card p-4 shadow-sm">
         <div>

@@ -7,6 +7,9 @@ import type {
   ScreenQuality,
   ScreenShareMode,
   ScreenShareState,
+  YouTubeActivitySession,
+  YouTubeHandoffResult,
+  YouTubePlayResult,
 } from "../room-types";
 
 export interface RoomAppMeta {
@@ -14,6 +17,7 @@ export interface RoomAppMeta {
   label: string;
   description: string;
   Icon: IconType;
+  keepAlive?: boolean;
 }
 
 export interface ScreenShareAppSettings {
@@ -29,8 +33,33 @@ export interface ScreenShareAppSettings {
 
 export interface ScreenShareAppState extends ScreenShareAppSettings {
   screenShare: ScreenShareState;
+  stageError: string | null;
+  stageOccupied: boolean;
+  stageReady: boolean;
+  stageTransitioning: boolean;
   onToggleScreenShare: () => void | Promise<void>;
 }
+
+export interface YouTubeAppState {
+  activity: YouTubeAppActivity | null;
+  disabled: boolean;
+  disabledReason: string | null;
+  error: string | null;
+  isHost: boolean;
+  isRecovering: boolean;
+  isRequestingHandoff: boolean;
+  isReplacing: boolean;
+  isStarting: boolean;
+  visible: boolean;
+  onEnd: () => void | Promise<void>;
+  onPlay: (input: string) => Promise<YouTubePlayResult>;
+  onRequestHandoff: (input: string) => Promise<YouTubeHandoffResult>;
+}
+
+export type YouTubeAppActivity = Pick<
+  YouTubeActivitySession,
+  "hostIdentity" | "sessionId" | "videoId"
+>;
 
 export interface RoomAppModule extends RoomAppMeta {
   isActive?: (context: RoomAppRenderContext) => boolean;
@@ -40,4 +69,5 @@ export interface RoomAppModule extends RoomAppMeta {
 export interface RoomAppRenderContext {
   app: RoomAppModule;
   screenShareApp: ScreenShareAppState;
+  youtubeApp: YouTubeAppState;
 }

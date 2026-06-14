@@ -6,7 +6,8 @@ The documentation is intended for engineers and coding agents working on the pro
 
 ## Architecture
 
-- [Room Sidebar Applications](./architecture/room-sidebar-applications.md) - The scalable app workspace inside a room, including navigation ownership, module registration, and the current Screen Share, YouTube, and Spotify states.
+- [Room Sidebar Applications](./architecture/room-sidebar-applications.md) - The scalable app workspace inside a room, including navigation ownership, module registration, and the current Screen Share, YouTube, and Spotify placeholder states.
+- [Room Stage and Shared Media](./architecture/room-stage-and-shared-media.md) - Stage ownership, synchronization boundaries, and the LiveKit-only YouTube shared media lifecycle.
 
 ## Documentation Guidelines
 
