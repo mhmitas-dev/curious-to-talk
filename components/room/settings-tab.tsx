@@ -58,11 +58,9 @@ function DisplayOptionButton({
       onClick={onToggle}
       disabled={isUnsupported}
       className={`flex items-center justify-between rounded-xl border p-4 text-left transition-all ${
-        isActive
-          ? "border-secondary bg-secondary text-secondary-foreground shadow-sm"
-          : isAttentionState
-            ? "border-destructive/35 bg-card text-foreground hover:bg-destructive/10"
-            : "border-border bg-card text-foreground hover:bg-accent/50"
+        isAttentionState
+          ? "border-destructive/35 bg-card text-foreground hover:bg-destructive/10"
+          : "border-border bg-card text-foreground hover:bg-accent/50"
       } ${isUnsupported ? "cursor-not-allowed opacity-55 hover:bg-card" : ""}`}
       aria-label={label}
       title={label}
@@ -71,10 +69,10 @@ function DisplayOptionButton({
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
             isActive
-              ? "bg-secondary-foreground text-secondary"
+              ? "bg-primary text-primary-foreground"
               : isAttentionState
                 ? "bg-destructive/15 text-destructive"
-                : "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
           }`}
         >
           <Sun
@@ -83,11 +81,7 @@ function DisplayOptionButton({
         </div>
         <div className="min-w-0">
           <span className="block truncate font-medium">Keep screen awake</span>
-          <span
-            className={`mt-0.5 block text-xs ${
-              isActive ? "text-secondary-foreground/70" : "text-muted-foreground"
-            }`}
-          >
+          <span className="mt-0.5 block text-xs text-muted-foreground">
             {statusText}
           </span>
         </div>
@@ -95,7 +89,7 @@ function DisplayOptionButton({
       <span
         className={`ml-3 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
           isActive
-            ? "bg-secondary-foreground text-secondary"
+            ? "bg-primary text-primary-foreground"
             : isAttentionState
               ? "bg-destructive/15 text-destructive"
               : "bg-accent text-muted-foreground"
