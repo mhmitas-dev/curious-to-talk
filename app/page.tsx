@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/create-room-form";
+import { PwaInstallFooterLink } from "@/components/pwa-install-prompt";
 import { RoomsPresenceList } from "@/components/rooms-presence-list";
 import Image from "next/image";
 import Link from "next/link";
@@ -176,6 +177,9 @@ function HomePhilosophy() {
       <p className="mt-1 text-xs text-muted-foreground">
         &ldquo;Quiet, simple, lightweight.&rdquo;
       </p>
+      <div className="flex justify-center">
+        <PwaInstallFooterLink />
+      </div>
     </footer>
   );
 }

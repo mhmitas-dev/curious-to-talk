@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PwaServiceWorker } from "@/components/pwa-service-worker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +19,11 @@ export const metadata: Metadata = {
   applicationName: "Niribi",
   other: {
     "apple-mobile-web-app-title": "Niribi",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Niribi",
   },
 };
 
@@ -38,6 +44,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        <PwaServiceWorker />
       </body>
     </html>
   );
