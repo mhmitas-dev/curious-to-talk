@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Rubik_Spray_Paint } from "next/font/google";
 import { PwaServiceWorker } from "@/components/pwa-service-worker";
 import "./globals.css";
 
@@ -10,6 +10,12 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const rubikSprayPaint = Rubik_Spray_Paint({
+  weight: "400",
+  variable: "--font-rubik-spray-paint",
   subsets: ["latin"],
 });
 
@@ -41,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     // Always dark — force the .dark class for shadcn tokens
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${rubikSprayPaint.variable} dark h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
         <PwaServiceWorker />
